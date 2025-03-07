@@ -9,6 +9,7 @@ const msg = 'HTL Wien West';
     <div class="row justify-center q-mt-md">
       <WelcomeMessage :message="msg" />
     </div>
+    
   </div>
 </template>
 
