@@ -3,7 +3,7 @@ import { RouterView } from "vue-router";
 </script>
 
 <template>
-  <header>
+  <header id="">
     <q-tabs>
       <q-route-tab to="/" label="Home"></q-route-tab>
       <q-route-tab to="/about" label="About"></q-route-tab>
@@ -12,7 +12,11 @@ import { RouterView } from "vue-router";
     </q-tabs>
   </header>
 
+
   <RouterView />
+  <footer>
+    
+  </footer>
 </template>
 
 <style>
@@ -24,4 +28,5 @@ import { RouterView } from "vue-router";
 * {
   font-family: "Montserrat";
 }
+
 </style>
