@@ -1,14 +1,9 @@
-<script setup>
-
-</script>
-
 <template>
-  <div class="q-mx-xl column items-center">
-    <h3>Home View</h3>
-
-    
-  </div>
+  <q-page class="flex flex-center">
+    <h3>Willkommen auf der Startseite!</h3> 
+  </q-page>
 </template>
 
-<style></style>
+<script>
 
+</script>

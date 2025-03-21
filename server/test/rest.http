@@ -1,0 +1,36 @@
+GET http://localhost:5000/test
+
+### 
+GET http://localhost:5000/users/all
+
+
+### Teste die Datenbankverbindung
+GET http://localhost:5000/users
+Accept: application/json
+
+### Alle Benutzer abrufen
+GET http://localhost:5000/users/all
+Accept: application/json
+
+### Neuen Benutzer erstellen
+POST http://localhost:5000/users/create
+Content-Type: application/json
+
+{
+  "username": "Balls",
+  "password": "123"
+}
+
+### Login mit dem erstellten Benutzer
+POST http://localhost:5000/users/login
+Content-Type: application/json
+
+{
+  "username": "Thorsten",
+  "password": "123"
+}
+
+### Aktuellen Benutzer abrufen (erfordert gültige Session)
+GET http://localhost:5000/users/me
+Accept: application/json
+Cookie: connect.sid=s%3A123456789.abcdef123456789

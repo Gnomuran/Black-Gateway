@@ -1,0 +1,35 @@
+{
+  "name": "webserver-template",
+  "version": "1.0.0",
+  "description": "a simple web server template",
+  "type": "module",
+  "main": "app.js",
+  "scripts": {
+    "start": "node ./src/app.js",
+    "dev": "nodemon ./src/app.js",
+    "lint": "eslint . --ext .js"
+  },
+  "author": "Robert Baumgartner",
+  "license": "ISC",
+  "dependencies": {
+    "bcryptjs": "^3.0.2",
+    "body-parser": "^1.20.3",
+    "colors": "^1.4.0",
+    "cors": "^2.8.5",
+    "debug": "^4.3.4",
+    "dotenv": "^14.3.2",
+    "express": "^4.21.2",
+    "express-async-handler": "^1.2.0",
+    "express-session": "^1.18.1",
+    "is-my-json-valid": "^2.20.6",
+    "jsonwebtoken": "^9.0.2",
+    "morgan": "^1.10.0",
+    "pg": "^8.14.1"
+  },
+  "devDependencies": {
+    "eslint": "^8.17.0",
+    "eslint-config-airbnb-base": "^15.0.0",
+    "eslint-plugin-import": "^2.25.4",
+    "nodemon": "^2.0.16"
+  }
+}

@@ -1,6 +1,7 @@
 import { createApp } from 'vue';
 import { Quasar } from 'quasar';
 import quasarIconSet from 'quasar/icon-set/svg-fontawesome-v6';
+import { createPinia } from 'pinia'; // Pinia importieren
 
 import '@quasar/extras/roboto-font/roboto-font.css';
 import '@quasar/extras/material-icons/material-icons.css';
@@ -13,11 +14,19 @@ import App from './App.vue';
 import router from './router';
 
 const app = createApp(App);
+
+// Pinia initialisieren
+const pinia = createPinia();
+app.use(pinia); // Pinia zur App hinzufügen
+
+// Quasar konfigurieren
 app.use(Quasar, {
-  plugins: {}, // import Quasar plugins and add here
+  plugins: {}, // Quasar-Plugins hier hinzufügen
   iconSet: quasarIconSet,
 });
 
+// Router zur App hinzufügen
 app.use(router);
 
+// App mounten
 app.mount('#app');
