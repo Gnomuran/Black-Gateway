@@ -11,9 +11,11 @@
   },
   "dependencies": {
     "@quasar/extras": "^1.16.11",
+    "@types/three": "^0.175.0",
     "axios": "^1.8.4",
     "pinia": "^3.0.1",
     "quasar": "^2.15.2",
+    "three": "^0.175.0",
     "vue": "^3.4.21",
     "vue-router": "^4.3.0"
   },

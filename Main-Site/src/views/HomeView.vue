@@ -1,9 +1,14 @@
 <template>
   <q-page class="flex flex-center">
-    <h3>Willkommen auf der Startseite!</h3> 
+    <ThreeModel />
   </q-page>
 </template>
 
 <script>
+import ThreeModel from '@/components/ThreeModel.vue';
 
+export default 
+{
+  components: { ThreeModel }
+}
 </script>
