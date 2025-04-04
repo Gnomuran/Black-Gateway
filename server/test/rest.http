@@ -34,3 +34,5 @@ Content-Type: application/json
 GET http://localhost:5000/users/me
 Accept: application/json
 Cookie: connect.sid=s%3A123456789.abcdef123456789
+
+// json web token, express session
