@@ -21,7 +21,7 @@ const app = express();
 app.use(morgan('dev')); // Logger für Requests
 app.use(cors({
   origin: 'http://localhost:8080', // Frontend-URL
-  credentials: true, // Cookies mit Requests senden
+  credentials: true,
 }));
 
 app.use(express.json()); // JSON-Parsing aktivieren
@@ -29,10 +29,15 @@ app.use(express.urlencoded({ extended: true })); // URL-encoded Formulardaten er
 
 // 🔹 Session-Handling (MUSS VOR DEN ROUTEN STEHEN!)
 app.use(session({
-  secret: process.env.SESSION_SECRET, // 🔹 .env oder Fallback
+  secret: process.env.SESSION_SECRET,
   resave: false,
   saveUninitialized: false,
-  cookie: { secure: false }, // 🔹 Bei HTTPS auf true setzen
+  cookie: {
+    secure: false, // Für localhost development
+    httpOnly: true,
+    sameSite: 'lax',
+    maxAge: 24 * 60 * 60 * 1000, // 24h
+  },
 }));
 
 // 🔹 Statische Dateien bereitstellen (Optional)

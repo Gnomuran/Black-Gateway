@@ -71,5 +71,16 @@ router.get('/me', asyncHandler(async (req, res) => {
   }
   return res.status(200).json(req.session.user);
 }));
+// api/routes/users.js (am Ende der Datei, vor dem export)
+router.post('/logout', asyncHandler(async (req, res) => {
+  req.session.destroy((err) => {
+    if (err) {
+      console.error('Session-Zerstörung fehlgeschlagen:', err);
+      return res.status(500).json({ message: 'Logout fehlgeschlagen' });
+    }
+    res.clearCookie('connect.sid'); // Cookie löschen
+    return res.status(200).json({ message: 'Logout erfolgreich' });
+  });
+}));
 
 export default router;

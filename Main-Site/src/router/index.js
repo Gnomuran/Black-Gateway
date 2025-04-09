@@ -54,6 +54,14 @@ const routes = [
     },
   },
   {
+    path: '/kurse/:id',
+    name: 'KursDetail',
+    component: () => import('../views/KurseDetailView.vue'), // oder InfoDetailPage.vue
+    meta: {
+      transition: 'fade',
+    },
+  },
+  {
     path: '/about',
     name: 'About',
     component: () => import('../views/AboutView.vue'),

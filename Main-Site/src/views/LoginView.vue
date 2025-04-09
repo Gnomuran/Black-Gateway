@@ -39,18 +39,17 @@
 </template>
 
 <script>
-import axios from "axios";
+
 import { useRouter } from "vue-router";
 import { ref } from "vue";
-
-
+import { useAuthStore } from "../stores/auth.js";
 export default {
   setup() {
     const username = ref("");
     const password = ref("");
     const router = useRouter();
+    const authStore = useAuthStore(); // Pinia Store initialisieren
 
-    // Login-Funktion
     const login = async () => {
       try {
         console.log("Login-Request wird gesendet:", {
@@ -58,39 +57,33 @@ export default {
           password: password.value,
         });
 
-        const response = await axios.post("http://localhost:5000/users/login", {
-          username: username.value,
-          password: password.value,
-        });
-
-        console.log("Login erfolgreich:", response.data); // Erfolgsnachricht vom Server
-
-        // Falls Login erfolgreich
-        router.push("/home"); // Weiterleitung zur Startseite
+        // 1. Login durchführen (Cookie wird automatisch gespeichert)
+        await authStore.login(username.value, password.value);
+        
+        // 2. Session verifizieren
+        await authStore.checkSession();
+        
+        console.log("Login erfolgreich. Aktueller User:", authStore.user);
+        
+        // 3. Weiterleitung
+        router.push("/home");
       } catch (error) {
-        if (error.response) {
-          // Fehlerdetails vom Server
-          console.log("Fehler-Antwort vom Server:", error.response.data);
-          console.log("Fehlercode:", error.response.status);
-
-          // Fehlermeldung anzeigen
-          alert(
-            "Login fehlgeschlagen: " +
-              (error.response?.data?.message || "Unbekannter Fehler")
-          );
-        } else {
-          console.log("Netzwerkfehler oder kein Server erreichbar:", error);
-          alert("Login fehlgeschlagen: " + (error.message || "Netzwerkfehler"));
-        }
+        console.error("Login fehlgeschlagen:", error);
+        
+        // Präzise Fehlermeldung anzeigen
+        const errorMessage = error.response?.data?.message 
+          || error.message 
+          || "Login fehlgeschlagen";
+        
+        alert(errorMessage);
       }
     };
 
-    // Weiterleitung zur Registrierungsseite
-    const goToRegister = () => {
-      router.push("/register");
+    return { 
+      username, 
+      password, 
+      login 
     };
-
-    return { username, password, login, goToRegister };
   },
 };
 </script>
