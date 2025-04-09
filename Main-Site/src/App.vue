@@ -34,9 +34,13 @@
     </q-page-container>
 
     <!-- FOOTER (optional), nur wenn der Benutzer nicht auf Login oder Register ist -->
-    <q-footer v-if="!isLoginOrRegisterRoute" reveal elevated class="bg-dark text-white q-pa-md">
-      <q-toolbar>
-        <q-toolbar-title>© 2025 Projekt</q-toolbar-title>
+    <q-footer v-if="!isLoginOrRegisterRoute" reveal elevated class="bg-dark text-grey-5">
+      <q-toolbar class="justify-center">
+        <div class="text-caption">
+          <span class="text-accent">© 2025 Black Gateway</span> | 
+          <q-icon name="mdi-github" size="sm" class="q-mx-xs text-info" /> 
+          ITP Projekt
+        </div>
       </q-toolbar>
     </q-footer>
   </q-layout>

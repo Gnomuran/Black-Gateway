@@ -36,3 +36,37 @@ Accept: application/json
 Cookie: connect.sid=s%3A123456789.abcdef123456789
 
 // json web token, express session
+
+
+
+### 🔹 Check if API is working
+GET http://localhost:5000/info/
+Content-Type: application/json
+
+
+### 🔹 Alle Info-Einträge mit Kategorie/Subkategorie abrufen
+GET http://localhost:5000/info/all
+Content-Type: application/json
+
+
+### 🔹 Infos für eine bestimmte Subkategorie abrufen
+GET http://localhost:5000/info/subcategory/1
+Content-Type: application/json
+
+
+### ✅ Subkategorie als "fertig" markieren
+POST http://localhost:5000/info/complete
+Content-Type: application/json
+Cookie: connect.sid=s%3A123456789.abcdef123456789
+
+{
+  "subcategoryId": 1
+}
+
+###
+
+### 
+GET http://localhost:5000/info/completed
+Cookie: connect.sid=s%3A123456789.abcdef123456789
+
+

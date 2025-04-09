@@ -9,7 +9,7 @@ import session from 'express-session';
 // Importiere deine Routen
 import testRoute from './api/routes/test.js';
 import usersRoute from './api/routes/users.js';
-
+import kurseRoute from './api/routes/kurse.js';
 // 🔹 .env Datei laden
 dotenv.config();
 debug.enable(process.env.DEBUG); // DEBUG aus .env aktivieren
@@ -29,7 +29,7 @@ app.use(express.urlencoded({ extended: true })); // URL-encoded Formulardaten er
 
 // 🔹 Session-Handling (MUSS VOR DEN ROUTEN STEHEN!)
 app.use(session({
-  secret: process.env.SESSION_SECRET || '10YearsInTheJoint', // 🔹 .env oder Fallback
+  secret: process.env.SESSION_SECRET, // 🔹 .env oder Fallback
   resave: false,
   saveUninitialized: false,
   cookie: { secure: false }, // 🔹 Bei HTTPS auf true setzen
@@ -41,6 +41,7 @@ app.use(express.static(path.join(dirname, '/public')));
 // 🔹 API-Routen registrieren
 app.use('/test', testRoute);
 app.use('/users', usersRoute);
+app.use('/info', kurseRoute);
 
 // 🔹 Starte den Server
 const PORT = process.env.PORT || 5000;
