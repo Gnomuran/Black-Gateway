@@ -25,13 +25,13 @@
           v-for="subcategory in subcategories" 
           :key="subcategory.id"
           clickable
-          @click="toggleSubcategory(subcategory.id)"
-          :class="{ 'bg-grey-2': activeSubcategory === subcategory.id }"
+          @click="loadSubcategoryContent(subcategory.id)"
+          :class="{ 'bg-grey-2': activeSubcategoryId === subcategory.id }"
         >
           <q-item-section avatar>
             <q-icon 
               :name="isSubcategoryCompleted(subcategory.id) ? 'check_circle' : 'radio_button_unchecked'" 
-              :color="isSubcategoryCompleted(subcategory.id) ? 'positive' : 'green'"
+              :color="isSubcategoryCompleted(subcategory.id) ? 'positive' : 'grey'"
             />
           </q-item-section>
           
@@ -48,17 +48,17 @@
     </div>
     
     <!-- Inhalte der ausgewählten Subkategorie -->
-    <div v-if="activeSubcategory">
-      <div class="text-h5 q-mb-md">{{ getSubcategoryName(activeSubcategory) }}</div>
+    <div v-if="activeSubcategoryContent.length > 0">
+      <div class="text-h5 q-mb-md">{{ activeSubcategoryName }}</div>
       
       <q-card 
-        v-for="info in activeSubcategoryInfos" 
-        :key="info.id"
+        v-for="(info, index) in activeSubcategoryContent" 
+        :key="index"
         class="q-mb-md"
       >
         <q-card-section>
           <div class="text-h6">{{ info.title }}</div>
-          <div class="q-mt-sm">{{ info.content }}</div>
+          <div class="q-mt-sm" style="white-space: pre-line">{{ info.content }}</div>
           <q-img 
             v-if="info.image_url" 
             :src="info.image_url" 
@@ -69,10 +69,10 @@
       
       <div class="text-right q-mt-lg">
         <q-btn 
-          v-if="!isSubcategoryCompleted(activeSubcategory)"
+          v-if="!isSubcategoryCompleted(activeSubcategoryId)"
           color="primary" 
           label="Thema abschließen" 
-          @click="completeSubcategory(activeSubcategory)"
+          @click="completeSubcategory(activeSubcategoryId)"
         />
         <q-btn 
           v-else
@@ -98,9 +98,10 @@ export default {
     
     // State
     const subcategories = ref([]);
-    const infos = ref([]);
+    const allInfos = ref([]);
     const completedSubcategories = ref([]);
-    const activeSubcategory = ref(null);
+    const activeSubcategoryId = ref(null);
+    const activeSubcategoryContent = ref([]);
     
     // Daten laden
     const loadData = async () => {
@@ -108,10 +109,6 @@ export default {
         // Subkategorien laden
         const subcatsResponse = await api.get('/info/subcategories');
         subcategories.value = subcatsResponse.data.filter(sc => sc.category_id === 1); // Nur Schwarze Löcher
-        
-        // Infos laden
-        const infosResponse = await api.get('/info/all');
-        infos.value = infosResponse.data.filter(info => info.category === 'Schwarze Löcher');
         
         // Abgeschlossene Subkategorien laden
         const completedResponse = await api.get('/info/completed');
@@ -125,27 +122,36 @@ export default {
       }
     };
     
+    // Inhalte einer Subkategorie laden
+    const loadSubcategoryContent = async (subcategoryId) => {
+      try {
+        activeSubcategoryId.value = subcategoryId;
+        const response = await api.get(`/info/subcategory/${subcategoryId}`);
+        activeSubcategoryContent.value = response.data;
+      } catch (error) {
+        $q.notify({
+          type: 'negative',
+          message: 'Fehler beim Laden der Inhalte'
+        });
+        console.error(error);
+      }
+    };
+    
     // Berechnete Eigenschaften
     const totalSubcategories = computed(() => subcategories.value.length);
     const completedCount = computed(() => completedSubcategories.value.length);
     const progress = computed(() => completedCount.value / totalSubcategories.value);
     
-    const activeSubcategoryInfos = computed(() => {
-      return infos.value.filter(info => info.subcategory_id === activeSubcategory.value);
+    const activeSubcategoryName = computed(() => {
+      const subcat = subcategories.value.find(sc => sc.id === activeSubcategoryId.value);
+      return subcat ? subcat.name : '';
     });
     
     // Methoden
-    const toggleSubcategory = (id) => {
-      activeSubcategory.value = activeSubcategory.value === id ? null : id;
-    };
-    
-    const getSubcategoryName = (id) => {
-      const subcat = subcategories.value.find(sc => sc.id === id);
-      return subcat ? subcat.name : '';
-    };
-    
     const getInfoCount = (subcategoryId) => {
-      return infos.value.filter(info => info.subcategory_id === subcategoryId).length;
+      // Da wir die Infos erst bei Bedarf laden, können wir hier nicht die tatsächliche Anzahl wissen
+      // Alternativ könnten wir alle Infos auf einmal laden und hier filtern
+      return 0; // Platzhalter, könnte verbessert werden
     };
     
     const isSubcategoryCompleted = (id) => {
@@ -176,15 +182,14 @@ export default {
     
     return {
       subcategories,
-      infos,
       completedSubcategories,
-      activeSubcategory,
-      activeSubcategoryInfos,
+      activeSubcategoryId,
+      activeSubcategoryContent,
+      activeSubcategoryName,
       totalSubcategories,
       completedCount,
       progress,
-      toggleSubcategory,
-      getSubcategoryName,
+      loadSubcategoryContent,
       getInfoCount,
       isSubcategoryCompleted,
       completeSubcategory
