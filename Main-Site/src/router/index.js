@@ -53,14 +53,14 @@ const routes = [
       transition: "fade", // Standard-Animation für geschützte Routen
     },
   },
-  {
-    path: "/kurse/:id",
-    name: "KursDetail",
-    component: () => import("../views/LearningContentDialog.vue"), // oder InfoDetailPage.vue
-    meta: {
-      transition: "fade",
-    },
-  },
+  // {
+  //   path: "/kurse/:id",
+  //   name: "KursDetail",
+  //   component: () => import("../views/LearningContentDialog.vue"), // oder InfoDetailPage.vue
+  //   meta: {
+  //     transition: "fade",
+  //   },
+  // },
   {
     path: "/about",
     name: "About",
