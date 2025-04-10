@@ -7,7 +7,7 @@
     
     <!-- Content der darüber liegt -->
     <div class="overlay-content flex flex-center">
-      <h1 class="text-white text-h2 text-weight-bold">Dein Inhalt hier</h1>
+      <h1 class="text-white text-h2 text-weight-bold">Black Hole Test</h1>
       <!-- Weitere Inhalte -->
     </div>
   </div>
