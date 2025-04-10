@@ -105,4 +105,22 @@ router.get(
   }),
 );
 
+// 🔹 Alle Subkategorien abrufen
+router.get(
+  '/subcategories',
+  asyncHandler(async (req, res) => {
+    const { rows } = await query(`
+      SELECT 
+        s.id,
+        s.name,
+        c.name AS category_name,
+        c.id AS category_id
+      FROM subcategories s
+      JOIN categories c ON s.category_id = c.id
+      ORDER BY c.name, s.name;
+    `);
+    res.status(200).json(rows);
+  }),
+);
+
 export default router;
