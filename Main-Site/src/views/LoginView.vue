@@ -29,9 +29,7 @@
         <q-btn
           @click="$router.push('/register')"
           label="Registrieren"
-          background-color="info"
-          class="full-width q-mt-md"
-          flat
+          color="info" class="full-width q-mt-md" flat
         />
       </q-card-section>
     </q-card>

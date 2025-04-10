@@ -2,7 +2,7 @@
   <q-page class="flex flex-center">
     <q-card class="q-pa-md" style="width: 400px">
       <q-card-section>
-        <div class="text-h5 text-center q-mb-md">Registrieren</div>
+        <div class="text-h5 text-center q-mb-md " color="info" >Registrieren</div>
 
         <q-input v-model="username" label="Benutzername" outlined />
         <q-input v-model="password" label="Passwort" type="password" outlined class="q-mt-md" />

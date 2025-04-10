@@ -2,8 +2,8 @@
   <q-layout view="hHh lpR fFf">
     <!-- HEADER -->
     <q-header elevated class="bg-primary text-white">
-      <q-toolbar>
-        <q-toolbar-title>Black Gateway</q-toolbar-title>
+      <q-toolbar style="padding-top: 1vh;">
+        <q-toolbar-title class="text-accent"  style="color: var(--q-accent)  " >Black Gateway</q-toolbar-title>
 
         <!-- Logout-Button, nur wenn der Benutzer nicht auf Login oder Register ist -->
         <q-btn
@@ -100,4 +100,6 @@ const logout = () => {
 .fade-leave-to {
   opacity: 0;
 }
+
+
 </style>
