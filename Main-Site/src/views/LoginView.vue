@@ -3,7 +3,7 @@
     <q-card class="q-pa-md" style="width: 400px">
       <q-card-section>
         <!-- Titel -->
-        <div class="text-h5 text-center q-mb-md">Login</div>
+        <div class="text-h5 text-center q-mb-md ltext">Login</div>
 
         <!-- Benutzername-Eingabe -->
         <q-input v-model="username" label="Benutzername" outlined />
@@ -85,3 +85,11 @@ export default {
   },
 };
 </script>
+<style scoped >
+
+.ltext
+{
+  color: black;
+}
+
+</style>

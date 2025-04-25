@@ -42,7 +42,7 @@
           scene.add(model);
         });
   
-        // 🌟 Akkretionsscheibe als Partikel erzeugen
+      
         const particleCount = 500;
         const particleGeometry = new THREE.BufferGeometry();
         const positions = new Float32Array(particleCount * 3);
@@ -68,7 +68,7 @@
         particleSystem = new THREE.Points(particleGeometry, particleMaterial);
         scene.add(particleSystem);
   
-        // Animationsloop
+        
         const animate = () => {
           animationFrameId = requestAnimationFrame(animate);
   
@@ -84,7 +84,6 @@
         animate();
       });
   
-      // Cleanup
       onUnmounted(() => {
         cancelAnimationFrame(animationFrameId);
         renderer.dispose();

@@ -39,22 +39,22 @@ Cookie: connect.sid=s%3A123456789.abcdef123456789
 
 
 
-### 🔹 Check if API is working
+###  Check if API is working
 GET http://localhost:5000/info/
 Content-Type: application/json
 
 
-### 🔹 Alle Info-Einträge mit Kategorie/Subkategorie abrufen
+###  Alle Info-Einträge mit Kategorie/Subkategorie abrufen
 GET http://localhost:5000/info/all
 Content-Type: application/json
 
 
-### 🔹 Infos für eine bestimmte Subkategorie abrufen
+###  Infos für eine bestimmte Subkategorie abrufen
 GET http://localhost:5000/info/subcategory/1
 Content-Type: application/json
 
 
-### ✅ Subkategorie als "fertig" markieren
+###  Subkategorie als "fertig" markieren
 POST http://localhost:5000/info/complete
 Content-Type: application/json
 Cookie: connect.sid=s%3A123456789.abcdef123456789

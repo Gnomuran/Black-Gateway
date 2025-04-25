@@ -65,4 +65,10 @@ export default {
 .q-page {
   transition: transform 0.5s ease;
 }
+
+
+.ltext
+{
+  color: black;
+}
 </style>
