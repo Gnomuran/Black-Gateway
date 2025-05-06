@@ -5,9 +5,16 @@
       <div class="text-h4 text-accent">Lernkurs</div>
       <div v-if="isLoggedIn" class="row items-center">
         <span class="text-subtitle1 text-accent q-mr-sm">Hallo, {{ userName }}!</span>
-        <q-avatar color="accent" text-color="dark" size="sm">
+        <!-- Manueller NASA APOD Avatar -->
+        <div 
+          v-if="nasaApodImageUrl" 
+          class="manual-avatar"
+          :style="{ backgroundImage: `url(${nasaApodImageUrl})` }"
+        ></div>
+        <!-- Fallback Avatar falls NASA APOD nicht verfügbar -->
+        <div v-else class="manual-avatar fallback-avatar">
           {{ userName.charAt(0) }}
-        </q-avatar>
+        </div>
       </div>
     </div>
     
@@ -48,42 +55,43 @@
     
     <!-- Liste der Subkategorien (Lernmodule) -->
     <div class="q-mb-lg">
-  <div class="text-h5 q-mb-md text-accent">Lernmodule</div>
-  
-  <q-list bordered separator class="bg-dark">
-    <q-item 
-      v-for="subcategory in subcategories" 
-      :key="subcategory.id"
-      clickable
-      @click="loadSubcategoryContent(subcategory.id)"
-      :class="{ 'bg-secondary': activeSubcategoryId === subcategory.id }"
-      class="text-white"
-    >
-      <q-item-section avatar>
-        <q-icon 
-          :name="isSubcategoryCompleted(subcategory.id) ? 'mdi-checkbox-marked-circle' : 'mdi-checkbox-blank-circle-outline'" 
-          :color="isSubcategoryCompleted(subcategory.id) ? 'positive' : 'accent'"
-          size="24px"
-        />
-      </q-item-section>
+      <div class="text-h5 q-mb-md text-accent">Lernmodule</div>
       
-      <q-item-section>
-        <q-item-label>{{ subcategory.name }}</q-item-label>
-        <q-item-label caption class="text-accent">
-          {{ getInfoCount(subcategory.id) }} Lektionen
-        </q-item-label>
-      </q-item-section>
-      
-      <q-item-section side>
-        <q-icon 
-          :name="activeSubcategoryId === subcategory.id ? 'mdi-chevron-up' : 'mdi-chevron-down'" 
-          color="accent" 
-          size="sm"
-        />
-      </q-item-section>
-    </q-item>
-  </q-list>
-</div>
+      <q-list bordered separator class="bg-dark">
+        <q-item 
+          v-for="subcategory in subcategories" 
+          :key="subcategory.id"
+          clickable
+          @click="loadSubcategoryContent(subcategory.id)"
+          :class="{ 'bg-secondary': activeSubcategoryId === subcategory.id }"
+          class="text-white"
+        >
+          <q-item-section avatar>
+            <q-icon 
+              :name="isSubcategoryCompleted(subcategory.id) ? 'mdi-checkbox-marked-circle' : 'mdi-checkbox-blank-circle-outline'" 
+              :color="isSubcategoryCompleted(subcategory.id) ? 'positive' : 'accent'"
+              size="24px"
+            />
+          </q-item-section>
+          
+          <q-item-section>
+            <q-item-label>{{ subcategory.name }}</q-item-label>
+            <q-item-label caption class="text-accent">
+              {{ getInfoCount(subcategory.id) }} Lektionen
+            </q-item-label>
+          </q-item-section>
+          
+          <q-item-section side>
+            <q-icon 
+              :name="activeSubcategoryId === subcategory.id ? 'mdi-chevron-up' : 'mdi-chevron-down'" 
+              color="accent" 
+              size="sm"
+            />
+          </q-item-section>
+        </q-item>
+      </q-list>
+    </div>
+    
     <!-- Inhalte der ausgewählten Subkategorie -->
     <div v-if="activeSubcategoryContent.length > 0">
       <div class="text-h5 q-mb-md text-accent">{{ activeSubcategoryName }}</div>
@@ -149,6 +157,7 @@ import { ref, computed, onMounted, watch } from 'vue';
 import { api } from '../boot/axios';
 import { useQuasar } from 'quasar';
 import { useAuthStore } from '../stores/auth';
+import { useNasaStore } from '../stores/nasa';
 
 export default {
   name: 'LernApp',
@@ -156,6 +165,10 @@ export default {
   setup() {
     const $q = useQuasar();
     const authStore = useAuthStore();
+    const nasaStore = useNasaStore();
+
+    // NASA APOD Integration
+    const nasaApodImageUrl = computed(() => nasaStore.apodImageUrl);
     
     // State
     const subcategories = ref([]);
@@ -274,6 +287,10 @@ export default {
     // Initiales Laden und Reaktion auf Login-Änderungen
     onMounted(async () => {
       await loadData();
+      // NASA APOD Bild beim Laden der Komponente abrufen
+      if (!nasaStore.apodData) {
+        await nasaStore.fetchAPOD();
+      }
     });
     
     watch(isLoggedIn, async (newVal) => {
@@ -296,6 +313,7 @@ export default {
       progressPercentage,
       isLoggedIn,
       userName,
+      nasaApodImageUrl,
       loadSubcategoryContent,
       getInfoCount,
       isSubcategoryCompleted,
@@ -342,13 +360,38 @@ body {
   &:hover {
     transform: translateX(5px);
   }
-
 }
 
 .transition-icon {
   transition: transform 0.2s ease, color 0.3s ease;
 }
+
 .q-item:hover .transition-icon {
   transform: scale(1.1);
+}
+
+/* Manuelle Avatar Styling */
+.manual-avatar {
+  width: 32px; /* sm Avatar Größe */
+  height: 32px;
+  border-radius: 50%;
+  background-size: cover;
+  background-position: center;
+  border: 2px solid #ffb98d;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  transition: transform 0.3s ease;
+  
+  &:hover {
+    transform: scale(1.2);
+  }
+}
+
+.fallback-avatar {
+  background-color: #ffb98d;
+  color: #1B1B2F;
+  font-weight: bold;
 }
 </style>

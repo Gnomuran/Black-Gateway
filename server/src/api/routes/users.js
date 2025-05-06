@@ -42,6 +42,15 @@ router.post(
   }),
 );
 
+// 🔹 Benutzernamen und Registrierungsdaten abrufen
+router.get(
+  '/users-with-dates',
+  asyncHandler(async (req, res) => {
+    const { rows } = await query('SELECT username, created_at FROM users ORDER BY created_at');
+    res.status(200).json(rows);
+  }),
+);
+
 router.post('/login', asyncHandler(async (req, res) => {
   const { username, password } = req.body;
   console.log('Login Request:', req.body);
