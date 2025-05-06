@@ -12,6 +12,21 @@ export const useNasaStore = defineStore('nasa', () => {
   const asteroids = ref([]);
   const isLoading = ref(false);
   const error = ref(null);
+  const nasaMedia = ref([]);
+
+
+  async function fetchNasaMedia(query) {
+    try {
+      isLoading.value = true;
+      const response = await fetch(`https://images-api.nasa.gov/search?q=${encodeURIComponent(query)}`);
+      const data = await response.json();
+      nasaMedia.value = data.collection.items || [];
+    } catch (err) {
+      error.value = err.message;
+    } finally {
+      isLoading.value = false;
+    }
+  }
 
   // Getter für abgeleitete Daten
   const apodImageUrl = computed(() => {
@@ -94,11 +109,12 @@ export const useNasaStore = defineStore('nasa', () => {
     asteroids,
     isLoading,
     error,
-    
+    nasaMedia,
+   
     
     apodImageUrl,
     
-    
+    fetchNasaMedia,
     fetchAPOD,
     fetchMarsPhotos,
     fetchEPICImages,
