@@ -14,7 +14,7 @@
 
     <!-- Loading Indicator -->
     <q-inner-loading :showing="nasa.isLoading">
-      <q-spinner-gears size="50px" color="primary" />
+      <q-spinner-gears size="50px" color="info" />
     </q-inner-loading>
 
     <!-- Error Notification -->
@@ -28,9 +28,9 @@
     <!-- Main Content Sections -->
     <div class="q-gutter-y-md">
       <!-- APOD Section -->
-      <q-card>
+      <q-card class="bg-primary">
         <q-card-section>
-          <div class="text-h5">Astronomy Picture of the Day</div>
+          <div class="text-h5 accent ">Astronomy Picture of the Day</div>
           <div class="row q-gutter-md items-center">
             <q-input
               v-model="apodDate"
@@ -38,9 +38,11 @@
               outlined
               dense
               class="col-md-4"
+              color="info"
+              dark
             >
               <template v-slot:append>
-                <q-icon name="event" class="cursor-pointer">
+                <q-icon name="event" class="cursor-pointer" color="info">
                   <q-popup-proxy
                     cover
                     transition-show="scale"
@@ -50,6 +52,7 @@
                       v-model="apodDate"
                       mask="YYYY-MM-DD"
                       :max="maxDate"
+                      color="info"
                     />
                   </q-popup-proxy>
                 </q-icon>
@@ -57,25 +60,25 @@
             </q-input>
 
             <q-btn
-              color="primary"
+              color="info"
               label="Get Picture"
               @click="nasa.fetchAPOD(apodDate)"
               icon="refresh"
             />
 
             <q-btn
-              color="secondary"
+              color="positive"
               label="Random Date"
               @click="getRandomApodDate()"
               icon="shuffle"
             />
           </div>
-          <div class="text-subtitle2 q-mt-sm" v-if="nasa.apodData">
+          <div class="text-subtitle2 q-mt-sm text-white" v-if="nasa.apodData">
             {{ nasa.apodData.date }} | {{ nasa.apodData.title }}
           </div>
         </q-card-section>
 
-        <q-separator />
+        <q-separator color="info" />
 
         <q-card-section
           v-if="nasa.apodData"
@@ -85,13 +88,13 @@
             <q-img
               :src="nasa.apodImageUrl"
               :alt="nasa.apodData.title"
-              spinner-color="primary"
+              spinner-color="info"
               style="max-height: 70vh"
               class="rounded-borders"
             />
           </div>
 
-          <div class="col-md-4">
+          <div class="col-md-4 text-white">
             <p class="q-mt-sm">{{ nasa.apodData.explanation }}</p>
             <div v-if="nasa.apodData.copyright" class="text-caption q-mt-sm">
               <strong>Copyright:</strong> {{ nasa.apodData.copyright }}
@@ -99,7 +102,7 @@
 
             <div class="q-mt-md">
               <q-btn
-                color="primary"
+                color="info"
                 label="Get Today's Picture"
                 @click="fetchTodayAPOD()"
                 icon="update"
@@ -107,7 +110,7 @@
               />
               <q-btn
                 v-if="nasa.apodData.url"
-                color="grey"
+                color="white"
                 label="View Original"
                 :href="nasa.apodData.url"
                 target="_blank"
@@ -120,19 +123,19 @@
       </q-card>
 
       <!-- NASA Image Library Section -->
-      <q-card>
+      <q-card class="bg-primary">
         <q-card-section>
-          <div class="text-h5">NASA Image & Video Library</div>
-          <q-banner class="bg-blue-1 q-mt-sm">
+          <div class="text-h5 text-white">NASA Image & Video Library</div>
+          <q-banner class="bg-positive text-dark q-mt-sm">
             <template v-slot:avatar>
-              <q-icon name="info" color="blue" />
+              <q-icon name="info" color="dark" />
             </template>
             Search over 140,000 NASA images and videos. Try terms like "Hubble",
             "Moon", or "Earth".
           </q-banner>
         </q-card-section>
 
-        <q-separator />
+        <q-separator color="info" />
 
         <q-card-section>
           <div class="row q-col-gutter-md">
@@ -142,12 +145,15 @@
                 label="Search NASA Media"
                 outlined
                 dense
+                color="info"
+                dark
                 @keyup.enter="nasa.fetchNasaMedia(searchQuery)"
               >
                 <template v-slot:append>
                   <q-icon
                     name="search"
                     class="cursor-pointer"
+                    color="info"
                     @click="nasa.fetchNasaMedia(searchQuery)"
                   />
                 </template>
@@ -156,7 +162,7 @@
 
             <div class="col-md-4">
               <q-btn
-                color="primary"
+                color="info"
                 label="Search"
                 @click="nasa.fetchNasaMedia(searchQuery)"
                 class="full-width"
@@ -166,7 +172,7 @@
           </div>
 
           <div v-if="nasa.nasaMedia.length > 0" class="q-mt-md">
-            <div class="text-subtitle2 q-mb-sm">
+            <div class="text-subtitle2 q-mb-sm text-white">
               {{ nasa.nasaMedia.length }} results found
             </div>
 
@@ -200,7 +206,7 @@
             <div class="text-center q-mt-md">
               <q-btn
                 v-if="nasa.nasaMedia.length > itemsToShow"
-                color="primary"
+                color="info"
                 :label="showMoreMedia ? 'Show Less' : 'Show More'"
                 outline
                 @click="showMoreMedia = !showMoreMedia"
@@ -219,12 +225,12 @@
       </q-card>
 
       <!-- Mars Rover Section -->
-      <q-card>
+      <q-card class="bg-primary">
         <q-card-section>
-          <div class="text-h5">Mars Rover Photos</div>
-          <q-banner class="bg-blue-1 q-mt-sm">
+          <div class="text-h5 text-white">Mars Rover Photos</div>
+          <q-banner class="bg-positive text-dark q-mt-sm">
             <template v-slot:avatar>
-              <q-icon name="info" color="blue" />
+              <q-icon name="info" color="dark" />
             </template>
             Tip: Curiosity has the most photos available. Perseverance provides
             the newest images.
@@ -234,7 +240,7 @@
           </q-banner>
         </q-card-section>
 
-        <q-separator />
+        <q-separator color="info" />
 
         <q-card-section>
           <div class="row q-col-gutter-md">
@@ -245,6 +251,8 @@
                 label="Select Rover"
                 outlined
                 dense
+                color="info"
+                dark
                 @update:model-value="showRoverInfo"
               />
 
@@ -254,10 +262,12 @@
                 outlined
                 dense
                 class="q-mt-sm"
+                color="info"
+                dark
                 :rules="[(val) => isValidMarsDate(val) || 'Invalid date']"
               >
                 <template v-slot:append>
-                  <q-icon name="event" class="cursor-pointer">
+                  <q-icon name="event" class="cursor-pointer" color="info">
                     <q-popup-proxy
                       cover
                       transition-show="scale"
@@ -267,6 +277,7 @@
                         v-model="marsDate"
                         mask="YYYY-MM-DD"
                         :options="roverDateLimits"
+                        color="info"
                       />
                     </q-popup-proxy>
                   </q-icon>
@@ -274,7 +285,7 @@
               </q-input>
 
               <q-btn
-                color="primary"
+                color="info"
                 label="Load Photos"
                 @click="nasa.fetchMarsPhotos(rover, marsDate)"
                 class="q-mt-sm full-width"
@@ -319,16 +330,16 @@
       </q-card>
 
       <!-- EPIC Section -->
-      <q-card>
+      <q-card class="bg-primary">
         <q-card-section>
-          <div class="text-h5">EPIC Earth Images</div>
+          <div class="text-h5 text-white">EPIC Earth Images</div>
         </q-card-section>
 
-        <q-separator />
+        <q-separator color="info" />
 
         <q-card-section>
           <q-btn
-            color="primary"
+            color="info"
             label="Load Latest Images"
             @click="nasa.fetchEPICImages()"
             icon="public"
@@ -362,12 +373,12 @@
       </q-card>
 
       <!-- Asteroids Section -->
-      <q-card>
+      <q-card class="bg-primary">
         <q-card-section>
-          <div class="text-h5">Near-Earth Objects</div>
+          <div class="text-h5 text-white">Near-Earth Objects</div>
         </q-card-section>
 
-        <q-separator />
+        <q-separator color="info" />
 
         <q-card-section>
           <div class="row q-col-gutter-md">
@@ -377,15 +388,17 @@
                 label="Start Date (YYYY-MM-DD)"
                 outlined
                 dense
+                color="info"
+                dark
               >
                 <template v-slot:append>
-                  <q-icon name="event" class="cursor-pointer">
+                  <q-icon name="event" class="cursor-pointer" color="info">
                     <q-popup-proxy
                       cover
                       transition-show="scale"
                       transition-hide="scale"
                     >
-                      <q-date v-model="startDate" mask="YYYY-MM-DD" />
+                      <q-date v-model="startDate" mask="YYYY-MM-DD" color="info" />
                     </q-popup-proxy>
                   </q-icon>
                 </template>
@@ -397,22 +410,24 @@
                 outlined
                 dense
                 class="q-mt-sm"
+                color="info"
+                dark
               >
                 <template v-slot:append>
-                  <q-icon name="event" class="cursor-pointer">
+                  <q-icon name="event" class="cursor-pointer" color="info">
                     <q-popup-proxy
                       cover
                       transition-show="scale"
                       transition-hide="scale"
                     >
-                      <q-date v-model="endDate" mask="YYYY-MM-DD" />
+                      <q-date v-model="endDate" mask="YYYY-MM-DD" color="info" />
                     </q-popup-proxy>
                   </q-icon>
                 </template>
               </q-input>
 
               <q-btn
-                color="primary"
+                color="info"
                 label="Load Asteroids"
                 @click="nasa.fetchAsteroids(startDate, endDate)"
                 class="q-mt-sm full-width"
@@ -471,17 +486,17 @@
 
     <!-- Image Dialog -->
     <q-dialog v-model="imageDialog.open" maximized>
-      <q-card>
+      <q-card class="bg-primary">
         <q-card-section class="row items-center q-pb-none">
-          <div class="text-h6">Image Viewer</div>
+          <div class="text-h6 text-white">Image Viewer</div>
           <q-space />
-          <q-btn icon="close" flat round dense v-close-popup />
+          <q-btn icon="close" flat round dense v-close-popup color="white" />
         </q-card-section>
 
         <q-card-section class="flex flex-center">
           <q-img
             :src="imageDialog.url"
-            spinner-color="primary"
+            spinner-color="info"
             style="max-height: 80vh; max-width: 90vw"
           />
         </q-card-section>
@@ -490,18 +505,18 @@
 
     <!-- Media Dialog -->
     <q-dialog v-model="mediaDialog.open" maximized>
-      <q-card>
+      <q-card class="bg-primary">
         <q-card-section class="row items-center q-pb-none">
-          <div class="text-h6">{{ mediaDialog.title }}</div>
+          <div class="text-h6 text-white">{{ mediaDialog.title }}</div>
           <q-space />
-          <q-btn icon="close" flat round dense v-close-popup />
+          <q-btn icon="close" flat round dense v-close-popup color="white" />
         </q-card-section>
 
         <q-card-section class="flex flex-center">
           <q-img
             v-if="mediaDialog.type === 'image'"
             :src="mediaDialog.url"
-            spinner-color="primary"
+            spinner-color="info"
             style="max-height: 80vh; max-width: 90vw"
           />
 
@@ -516,14 +531,14 @@
           </video>
         </q-card-section>
 
-        <q-card-section v-if="mediaDialog.description" class="q-pt-none">
+        <q-card-section v-if="mediaDialog.description" class="q-pt-none text-white">
           <p>{{ mediaDialog.description }}</p>
-          <div class="text-caption text-grey">
+          <div class="text-caption text-grey-4">
             Published: {{ mediaDialog.date }}
           </div>
           <q-btn
             v-if="mediaDialog.url"
-            color="primary"
+            color="info"
             label="View Original"
             :href="mediaDialog.url"
             target="_blank"
