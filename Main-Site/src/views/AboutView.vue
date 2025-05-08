@@ -5,7 +5,7 @@
       <div class="col">
         <q-card class="bg-primary text-white">
           <q-card-section>
-            <div class="text-h4">NASA Explorer Dashboard</div>
+            <div class="text-h4 text-accent">NASA Explorer Dashboard</div>
             <div class="text-subtitle1">Discover the wonders of space</div>
           </q-card-section>
         </q-card>
@@ -28,9 +28,9 @@
     <!-- Main Content Sections -->
     <div class="q-gutter-y-md">
       <!-- APOD Section -->
-      <q-card class="bg-primary">
+      <q-card class="bg-secondary">
         <q-card-section>
-          <div class="text-h5 accent">Astronomy Picture of the Day</div>
+          <div class="text-h5 text-accent">Astronomy Picture of the Day</div>
           <div class="row q-gutter-md items-center">
             <q-input
               v-model="apodDate"
@@ -123,10 +123,10 @@
       </q-card>
 
       <!-- NASA Image Library Section -->
-      <q-card class="bg-primary">
+      <q-card class="bg-secondary">
         <q-card-section>
-          <div class="text-h5 text-white">NASA Image & Video Library</div>
-          <q-banner class="bg-positive text-dark q-mt-sm">
+          <div class="text-h5 text-accent">NASA Image & Video Library</div>
+          <q-banner class="bg-info text-dark q-mt-sm">
             <template v-slot:avatar>
               <q-icon name="info" color="dark" />
             </template>
@@ -182,20 +182,20 @@
                 :key="index"
                 class="col-6 col-sm-4 col-md-3"
               >
-                <q-card class="cursor-pointer" @click="openMediaDialog(item)">
+                <q-card class="cursor-pointer bg-secondary" @click="openMediaDialog(item)">
                   <q-img
                     :src="getMediaThumbnail(item)"
                     :ratio="1"
                     class="rounded-borders"
                   />
 
-                  <q-card-section class="q-pa-sm">
+                  <q-card-section class="q-pa-sm text-white">
                     <div
                       class="text-caption text-weight-medium ellipsis-2-lines"
                     >
                       {{ item.data[0].title }}
                     </div>
-                    <div class="text-caption text-grey">
+                    <div class="text-caption text-grey-4">
                       {{ formatDate(item.data[0].date_created) }}
                     </div>
                   </q-card-section>
@@ -225,10 +225,10 @@
       </q-card>
 
       <!-- Mars Rover Section -->
-      <q-card class="bg-primary">
+      <q-card class="bg-secondary">
         <q-card-section>
-          <div class="text-h5 text-white">Mars Rover Photos</div>
-          <q-banner class="bg-positive text-dark q-mt-sm">
+          <div class="text-h5 text-accent">Mars Rover Photos</div>
+          <q-banner class="bg-info text-dark q-mt-sm">
             <template v-slot:avatar>
               <q-icon name="info" color="dark" />
             </template>
@@ -317,7 +317,7 @@
                     @click="openImageDialog(photo.img_src)"
                   >
                     <div
-                      class="absolute-bottom text-caption text-center ellipsis"
+                      class="absolute-bottom text-caption text-center ellipsis text-white bg-secondary"
                     >
                       {{ photo.camera.name }} (Sol {{ photo.sol }})
                     </div>
@@ -332,9 +332,9 @@
 
     <!-- Image Dialog -->
     <q-dialog v-model="imageDialog.open" maximized>
-      <q-card class="bg-primary">
+      <q-card class="bg-secondary">
         <q-card-section class="row items-center q-pb-none">
-          <div class="text-h6 text-white">Image Viewer</div>
+          <div class="text-h6 text-accent">Image Viewer</div>
           <q-space />
           <q-btn icon="close" flat round dense v-close-popup color="white" />
         </q-card-section>
@@ -351,9 +351,9 @@
 
     <!-- Media Dialog -->
     <q-dialog v-model="mediaDialog.open" maximized>
-      <q-card class="bg-primary">
+      <q-card class="bg-secondary">
         <q-card-section class="row items-center q-pb-none">
-          <div class="text-h6 text-white">{{ mediaDialog.title }}</div>
+          <div class="text-h6 text-accent">{{ mediaDialog.title }}</div>
           <q-space />
           <q-btn icon="close" flat round dense v-close-popup color="white" />
         </q-card-section>
