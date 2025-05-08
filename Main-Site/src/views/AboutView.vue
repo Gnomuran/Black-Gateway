@@ -30,7 +30,7 @@
       <!-- APOD Section -->
       <q-card class="bg-primary">
         <q-card-section>
-          <div class="text-h5 accent ">Astronomy Picture of the Day</div>
+          <div class="text-h5 accent">Astronomy Picture of the Day</div>
           <div class="row q-gutter-md items-center">
             <q-input
               v-model="apodDate"
@@ -328,160 +328,6 @@
           </div>
         </q-card-section>
       </q-card>
-
-      <!-- EPIC Section -->
-      <q-card class="bg-primary">
-        <q-card-section>
-          <div class="text-h5 text-white">EPIC Earth Images</div>
-        </q-card-section>
-
-        <q-separator color="info" />
-
-        <q-card-section>
-          <q-btn
-            color="info"
-            label="Load Latest Images"
-            @click="nasa.fetchEPICImages()"
-            icon="public"
-          />
-
-          <div v-if="nasa.epicImages.length === 0" class="text-center q-pa-lg">
-            <q-icon name="public" size="xl" color="grey-5" />
-            <div class="text-grey-5 q-mt-sm">No images loaded yet</div>
-          </div>
-
-          <div v-else class="row q-col-gutter-sm q-mt-md">
-            <div
-              v-for="img in nasa.epicImages.slice(0, 4)"
-              :key="img.identifier"
-              class="col-6 col-sm-3"
-            >
-              <q-img
-                :src="getEpicImageUrl(img)"
-                :alt="img.caption"
-                class="rounded-borders cursor-pointer"
-                style="height: 180px"
-                @click="openImageDialog(getEpicImageUrl(img))"
-              >
-                <div class="absolute-bottom text-caption text-center ellipsis">
-                  {{ img.date.split(" ")[0] }}
-                </div>
-              </q-img>
-            </div>
-          </div>
-        </q-card-section>
-      </q-card>
-
-      <!-- Asteroids Section -->
-      <q-card class="bg-primary">
-        <q-card-section>
-          <div class="text-h5 text-white">Near-Earth Objects</div>
-        </q-card-section>
-
-        <q-separator color="info" />
-
-        <q-card-section>
-          <div class="row q-col-gutter-md">
-            <div class="col-md-4">
-              <q-input
-                v-model="startDate"
-                label="Start Date (YYYY-MM-DD)"
-                outlined
-                dense
-                color="info"
-                dark
-              >
-                <template v-slot:append>
-                  <q-icon name="event" class="cursor-pointer" color="info">
-                    <q-popup-proxy
-                      cover
-                      transition-show="scale"
-                      transition-hide="scale"
-                    >
-                      <q-date v-model="startDate" mask="YYYY-MM-DD" color="info" />
-                    </q-popup-proxy>
-                  </q-icon>
-                </template>
-              </q-input>
-
-              <q-input
-                v-model="endDate"
-                label="End Date (YYYY-MM-DD)"
-                outlined
-                dense
-                class="q-mt-sm"
-                color="info"
-                dark
-              >
-                <template v-slot:append>
-                  <q-icon name="event" class="cursor-pointer" color="info">
-                    <q-popup-proxy
-                      cover
-                      transition-show="scale"
-                      transition-hide="scale"
-                    >
-                      <q-date v-model="endDate" mask="YYYY-MM-DD" color="info" />
-                    </q-popup-proxy>
-                  </q-icon>
-                </template>
-              </q-input>
-
-              <q-btn
-                color="info"
-                label="Load Asteroids"
-                @click="nasa.fetchAsteroids(startDate, endDate)"
-                class="q-mt-sm full-width"
-                icon="warning"
-              />
-            </div>
-
-            <div class="col-md-8">
-              <div
-                v-if="nasa.asteroids.length === 0"
-                class="text-center q-pa-lg"
-              >
-                <q-icon name="warning" size="xl" color="grey-5" />
-                <div class="text-grey-5 q-mt-sm">
-                  No asteroid data loaded yet
-                </div>
-              </div>
-
-              <q-table
-                v-else
-                :rows="nasa.asteroids"
-                :columns="asteroidColumns"
-                row-key="id"
-                :pagination="asteroidPagination"
-                class="q-mt-sm"
-                flat
-                bordered
-              >
-                <template
-                  v-slot:body-cell-is_potentially_hazardous_asteroid="props"
-                >
-                  <q-td :props="props">
-                    <q-icon
-                      :name="props.value ? 'warning' : 'check'"
-                      :color="props.value ? 'negative' : 'positive'"
-                      size="sm"
-                    />
-                  </q-td>
-                </template>
-
-                <template v-slot:body-cell-close_approach_data="props">
-                  <q-td :props="props">
-                    {{
-                      props.row.close_approach_data[0].close_approach_date_full.split(
-                        " "
-                      )[1]
-                    }}
-                  </q-td>
-                </template>
-              </q-table>
-            </div>
-          </div>
-        </q-card-section>
-      </q-card>
     </div>
 
     <!-- Image Dialog -->
@@ -531,7 +377,10 @@
           </video>
         </q-card-section>
 
-        <q-card-section v-if="mediaDialog.description" class="q-pt-none text-white">
+        <q-card-section
+          v-if="mediaDialog.description"
+          class="q-pt-none text-white"
+        >
           <p>{{ mediaDialog.description }}</p>
           <div class="text-caption text-grey-4">
             Published: {{ mediaDialog.date }}
@@ -562,8 +411,6 @@ const { formatDate } = date;
 
 // Form inputs
 const marsDate = ref("");
-const startDate = ref("");
-const endDate = ref("");
 const rover = ref("curiosity");
 const roverOptions = ["curiosity", "opportunity", "spirit", "perseverance"];
 const searchQuery = ref("");
@@ -598,46 +445,6 @@ const mediaDialog = ref({
   type: "image",
   mimeType: "",
 });
-
-// Asteroid table columns
-const asteroidColumns = [
-  {
-    name: "name",
-    label: "Name",
-    field: "name",
-    align: "left",
-    sortable: true,
-  },
-  {
-    name: "estimated_diameter",
-    label: "Diameter (m)",
-    field: (row) =>
-      row.estimated_diameter.meters.estimated_diameter_max.toFixed(1),
-    align: "right",
-    sortable: true,
-  },
-  {
-    name: "is_potentially_hazardous_asteroid",
-    label: "Hazardous",
-    field: "is_potentially_hazardous_asteroid",
-    align: "center",
-    sortable: true,
-  },
-  {
-    name: "close_approach_data",
-    label: "Approach Time",
-    field: (row) => row.close_approach_data[0].close_approach_date_full,
-    align: "center",
-    sortable: true,
-  },
-];
-
-const asteroidPagination = {
-  sortBy: "close_approach_data",
-  descending: false,
-  page: 1,
-  rowsPerPage: 5,
-};
 
 // Computed
 const visibleMediaItems = computed(() => {
@@ -685,11 +492,6 @@ function showRoverInfo() {
   };
 
   nasa.notifyUser(roverInfo[rover.value]);
-}
-
-function getEpicImageUrl(image) {
-  const date = image.date.split(" ")[0].replace(/-/g, "/");
-  return `https://epic.gsfc.nasa.gov/archive/natural/${date}/jpg/${image.image}.jpg`;
 }
 
 function getMediaThumbnail(item) {
