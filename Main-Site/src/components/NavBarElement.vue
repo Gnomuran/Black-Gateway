@@ -49,7 +49,7 @@
         active-color="accent"
       >
         <q-route-tab to="/home" label="Home" exact />
-        <q-route-tab to="/about" label="About" exact />
+        <q-route-tab to="/dashboard" label="Dashboard" exact />
         <q-route-tab to="/kurse" label="Kurse" exact />
         <q-route-tab to="/forum" label="Forum" exact />
       </q-tabs>
@@ -76,11 +76,11 @@
           <q-item-section>Home</q-item-section>
         </q-item>
 
-        <q-item clickable v-ripple to="/about" exact class="text-info" active-class="bg-primary text-accent">
+        <q-item clickable v-ripple to="/dashboard" exact class="text-info" active-class="bg-primary text-accent">
           <q-item-section avatar>
             <q-icon name="info" />
           </q-item-section>
-          <q-item-section>About</q-item-section>
+          <q-item-section>Dashboard</q-item-section>
         </q-item>
 
         <q-item clickable v-ripple to="/kurse" class="text-info" exact active-class="bg-primary text-accent">
