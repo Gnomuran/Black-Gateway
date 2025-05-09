@@ -65,9 +65,9 @@ const routes = [
     },
   },
   {
-    path: "/about",
-    name: "About",
-    component: () => import("../views/AboutView.vue"),
+    path: "/dashboard",
+    name: "Dashboard",
+    component: () => import("../views/DashBoardView.vue"),
     meta: {
       // requiresAuth: true,
       transition: "fade", // Standard-Animation für geschützte Routen

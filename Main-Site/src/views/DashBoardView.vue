@@ -48,7 +48,10 @@ const nasa = useNasaStore();
 .q-card {
   transition: transform 0.2s;
 }
-
+.q-page
+{
+  background-color: #1B1B2F ;
+}
 .q-card:hover {
   transform: translateY(-2px);
 }

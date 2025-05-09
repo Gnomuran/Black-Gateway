@@ -49,7 +49,7 @@
         active-color="accent"
       >
         <q-route-tab to="/home" label="Home" exact />
-        <q-route-tab to="/about" label="About" exact />
+        <q-route-tab to="/dashboard" label="Dashboard" exact />
         <q-route-tab to="/kurse" label="Kurse" exact />
         <q-route-tab to="/forum" label="Forum" exact />
       </q-tabs>
@@ -60,7 +60,8 @@
       v-if="!isLoginOrRegisterRoute"
       v-model="leftDrawerOpen"
       bordered
-      content-class="bg-grey-1"
+      content-class="bg-primary"
+      class="bg-primary"
       :breakpoint="1023"
     >
       <q-list>
@@ -68,28 +69,28 @@
           Navigation
         </q-item-label>
         
-        <q-item clickable v-ripple to="/home" exact active-class="bg-primary text-accent">
+        <q-item clickable v-ripple to="/home" exact class="text-info" active-class="bg-primary text-accent">
           <q-item-section avatar>
             <q-icon name="home" />
           </q-item-section>
           <q-item-section>Home</q-item-section>
         </q-item>
 
-        <q-item clickable v-ripple to="/about" exact active-class="bg-primary text-accent">
+        <q-item clickable v-ripple to="/dashboard" exact class="text-info" active-class="bg-primary text-accent">
           <q-item-section avatar>
             <q-icon name="info" />
           </q-item-section>
-          <q-item-section>About</q-item-section>
+          <q-item-section>Dashboard</q-item-section>
         </q-item>
 
-        <q-item clickable v-ripple to="/kurse" exact active-class="bg-primary text-accent">
+        <q-item clickable v-ripple to="/kurse" class="text-info" exact active-class="bg-primary text-accent">
           <q-item-section avatar>
             <q-icon name="school" />
           </q-item-section>
           <q-item-section>Kurse</q-item-section>
         </q-item>
 
-        <q-item clickable v-ripple to="/forum" exact active-class="bg-primary text-accent">
+        <q-item clickable v-ripple to="/forum" exact class="text-info" active-class="bg-primary text-accent">
           <q-item-section avatar>
             <q-icon name="forum" />
           </q-item-section>
@@ -141,6 +142,11 @@ onUnmounted(() => {
 </script>
 
 <style lang="scss" scoped>
+
+.q-drawer
+{
+  background-color: #1B1B2F ;
+}
 .responsive-header {
   transition: height 0.3s ease;
 }
