@@ -36,14 +36,25 @@ const routes = [
     },
   },
   {
-    path: "/forum",
-    name: "Forum",
-    component: () => import("../views/ForumView.vue"),
-    meta: {
+    path: '/forum',
+    name: 'Forum',
+    component: () => import('../views/ForumView.vue'),
+    meta: { 
       // requiresAuth: true,
-      transition: "fade", // Standard-Animation für geschützte Routen
+      transition: 'fade',
     },
   },
+  {
+    path: '/forum/:threadId',  // Dynamic route for threads
+    name: 'ThreadView',
+    component: () => import('../views/ThreadView.vue'),
+    meta: {
+      // requiresAuth: true,
+      transition: 'fade',
+    },
+    props: true  // Pass route params as props
+  },
+  
   {
     path: "/kurse",
     name: "Kurse",

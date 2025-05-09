@@ -1,6 +1,13 @@
 <script setup>
 import { ref } from 'vue';
-import { useForumStore } from '../stores/forum';
+import { useForumStore } from '../stores/forum.js';
+
+const props = defineProps({
+  threadId: {
+    type: String,
+    required: false
+  }
+});
 
 const forum = useForumStore();
 const content = ref('');
