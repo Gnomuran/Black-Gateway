@@ -69,4 +69,46 @@ Cookie: connect.sid=s%3A123456789.abcdef123456789
 GET http://localhost:5000/info/completed
 Cookie: connect.sid=s%3A123456789.abcdef123456789
 
+###
 
+curl https://api.deepseek.com/v1/chat/completions \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer sk-0b160af2672f4aa1b891f672aecf1032" \
+  -d '{
+    "model": "deepseek-chat",
+    "messages": [
+      {"role": "user", "content": "Hello"}
+    ]
+  }'
+
+
+###
+  POST http://localhost:5000/deepseek/ask
+Content-Type: application/json
+
+{
+  "prompt": "What is the capital of France?"
+}
+
+###
+curl -v https://api.deepseek.com
+telnet api.deepseek.com 443
+
+###
+
+GET http://localhost:5000/deepseek/answer
+Content-Type: application/json
+
+{
+  "promptId": 12345,  
+  "answer": "The capital of France is Paris."
+}
+###
+curl -x http://proxy-server:3128 https://api.deepseek.com
+
+###
+curl -x http://proxy-server:3128 \
+  https://api.deepseek.com/v1/chat/completions \
+  -H "Authorization: Bearer sk-dd7f637fbcef4a7c889b4bd174bba469" \
+  -H "Content-Type: application/json" \
+  -d '{"model":"deepseek-chat","messages":[{"role":"user","content":"Hello"}]}'

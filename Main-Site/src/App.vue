@@ -30,6 +30,8 @@ import { useRoute } from 'vue-router';
 import NavBarElement from './components/NavBarElement.vue';
 
 
+
+
 const route = useRoute(); // 🔹 Verwende die aktuelle Route
 
 

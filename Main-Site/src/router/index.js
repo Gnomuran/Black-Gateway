@@ -45,14 +45,24 @@ const routes = [
     },
   },
   {
-    path: '/forum/:threadId',  // Dynamic route for threads
-    name: 'ThreadView',
-    component: () => import('../views/ThreadView.vue'),
+    path: '/board/:boardId',
+    name: 'Board',
+    component: () => import('../views/BoardView.vue'),
     meta: {
       // requiresAuth: true,
       transition: 'fade',
     },
-    props: true  // Pass route params as props
+    props: true
+  },
+  {
+    path: '/thread/:threadId',
+    name: 'Thread',
+    component: () => import('../views/ThreadView.vue'),
+    meta: {
+      requiresAuth: true,
+      transition: 'fade',
+    },
+    props: true
   },
   
   {
@@ -71,6 +81,14 @@ const routes = [
     meta: {
       // requiresAuth: true,
       transition: "fade", // Standard-Animation für geschützte Routen
+    },
+  },
+  {
+    path: '/deepseek',
+    name: 'Deepseek',
+    component: () => import('../views/DeepseekView.vue'),
+    meta: {
+      transition: 'fade',
     },
   },
 ];
