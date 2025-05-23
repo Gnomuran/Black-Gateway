@@ -17,7 +17,7 @@
         <div class="text-caption">
           <span class="text-accent">© 2025 Black Gateway</span> | 
           <q-icon name="mdi-github" size="sm" class="q-mx-xs text-info" /> 
-          ITP Projekt
+          ITP Projekt / HTL Wien West
         </div>
       </q-toolbar>
     </q-footer>

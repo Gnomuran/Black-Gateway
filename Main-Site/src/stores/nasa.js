@@ -1,5 +1,6 @@
 import { defineStore } from "pinia";
 import { ref, computed } from "vue";
+import axios from "axios";
 
 export const useNasaStore = defineStore("nasa", () => {
   const apiKey = "PPbsss1qpP5mn8Xh0WLGrv1NJYPESHAZCDWktPdy";
@@ -18,11 +19,10 @@ export const useNasaStore = defineStore("nasa", () => {
     try {
       isLoading.value = true;
       error.value = null;
-      const response = await fetch(
+      const response = await axios.get(
         `https://images-api.nasa.gov/search?q=${encodeURIComponent(query)}`
       );
-      const data = await response.json();
-      nasaMedia.value = data.collection.items || [];
+      nasaMedia.value = response.data.collection.items || [];
     } catch (err) {
       error.value = err.message;
       console.error("NasaMedia Fehler:", err);
@@ -44,11 +44,15 @@ export const useNasaStore = defineStore("nasa", () => {
     try {
       isLoading.value = true;
       error.value = null;
-      let url = `https://api.nasa.gov/planetary/apod?api_key=${apiKey}&thumbs=true`;
-      if (date) url += `&date=${date}`;
-      const response = await fetch(url);
-      if (!response.ok) throw new Error("APOD konnte nicht geladen werden");
-      apodData.value = await response.json();
+      let url = `https://api.nasa.gov/planetary/apod`;
+      let params = {
+        api_key: apiKey,
+        thumbs: true
+      };
+      if (date) params.date = date;
+      
+      const response = await axios.get(url, { params });
+      apodData.value = response.data;
     } catch (err) {
       error.value = err.message;
       console.error("APOD Fehler:", err);
@@ -66,12 +70,16 @@ export const useNasaStore = defineStore("nasa", () => {
     try {
       isLoading.value = true;
       error.value = null;
-      let url = `https://api.nasa.gov/mars-photos/api/v1/rovers/${rover}/photos?api_key=${apiKey}`;
-      if (earthDate) url += `&earth_date=${earthDate}`;
-      if (sol) url += `&sol=${sol}`;
-      const response = await fetch(url);
-      const data = await response.json();
-      marsPhotos.value = data.photos || [];
+      let url = `https://api.nasa.gov/mars-photos/api/v1/rovers/${rover}/photos`;
+      let params = {
+        api_key: apiKey
+      };
+      
+      if (earthDate) params.earth_date = earthDate;
+      if (sol) params.sol = sol;
+      
+      const response = await axios.get(url, { params });
+      marsPhotos.value = response.data.photos || [];
     } catch (err) {
       error.value = err.message;
       console.error("MarsPhotos Fehler:", err);
@@ -87,10 +95,9 @@ export const useNasaStore = defineStore("nasa", () => {
       error.value = null;
       let url = `https://epic.gsfc.nasa.gov/api/natural`;
       if (date) url += `/date/${date}`;
-      const response = await fetch(url);
-      if (!response.ok)
-        throw new Error("EPIC-Daten konnten nicht geladen werden");
-      epicImages.value = await response.json();
+      
+      const response = await axios.get(url);
+      epicImages.value = response.data;
     } catch (err) {
       error.value = err.message;
       console.error("EPIC Fehler:", err);
@@ -109,10 +116,15 @@ export const useNasaStore = defineStore("nasa", () => {
       const start = startDate || today;
       const end = endDate || today;
 
-      const url = `https://api.nasa.gov/neo/rest/v1/feed?start_date=${start}&end_date=${end}&api_key=${apiKey}`;
-      const response = await fetch(url);
-      const data = await response.json();
-      asteroids.value = Object.values(data.near_earth_objects).flat();
+      const response = await axios.get(`https://api.nasa.gov/neo/rest/v1/feed`, {
+        params: {
+          start_date: start,
+          end_date: end,
+          api_key: apiKey
+        }
+      });
+      
+      asteroids.value = Object.values(response.data.near_earth_objects).flat();
     } catch (err) {
       error.value = err.message;
       console.error("Asteroiden Fehler:", err);
