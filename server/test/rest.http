@@ -1,6 +1,6 @@
 GET http://localhost:5000/test
 
-### 
+###
 GET http://localhost:5000/users/all
 
 
@@ -65,7 +65,7 @@ Cookie: connect.sid=s%3A123456789.abcdef123456789
 
 ###
 
-### 
+###
 GET http://localhost:5000/info/completed
 Cookie: connect.sid=s%3A123456789.abcdef123456789
 
@@ -82,33 +82,36 @@ curl https://api.deepseek.com/v1/chat/completions \
   }'
 
 
-###
-  POST http://localhost:5000/deepseek/ask
+
+### Test Forum API Routes
+
+### Get all topics
+GET http://localhost:5000/forum/topics
+Accept: application/json
+
+### Get trending GIFs
+GET http://localhost:5000/forum/gifs/trending?limit=20
+Accept: application/json
+
+### Search GIFs
+GET http://localhost:5000/forum/gifs/search?q=hello&limit=20
+Accept: application/json
+
+### Create a new post with explicit topic_id
+POST http://localhost:5000/forum/posts
 Content-Type: application/json
 
 {
-  "prompt": "What is the capital of France?"
+  "topic_id": 1,
+  "title": "Test Post",
+  "content": "This is a test post content",
+  "post_type": "text"
 }
 
-###
-curl -v https://api.deepseek.com
-telnet api.deepseek.com 443
+### Get posts by topic
+GET http://localhost:5000/forum/topics/1/posts
+Accept: application/json
 
-###
-
-GET http://localhost:5000/deepseek/answer
-Content-Type: application/json
-
-{
-  "promptId": 12345,  
-  "answer": "The capital of France is Paris."
-}
-###
-curl -x http://proxy-server:3128 https://api.deepseek.com
-
-###
-curl -x http://proxy-server:3128 \
-  https://api.deepseek.com/v1/chat/completions \
-  -H "Authorization: Bearer sk-dd7f637fbcef4a7c889b4bd174bba469" \
-  -H "Content-Type: application/json" \
-  -d '{"model":"deepseek-chat","messages":[{"role":"user","content":"Hello"}]}'
+### Get single post with replies
+GET http://localhost:5000/forum/posts/1
+Accept: application/json

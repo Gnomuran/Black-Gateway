@@ -1,288 +1,598 @@
+/* eslint-disable camelcase */
+// server/src/api/forum.js
 import express from 'express';
-import asyncHandler from 'express-async-handler';
+import pkg from 'pg';
+import axios from 'axios';
 import multer from 'multer';
-import path from 'path';
-import fs from 'fs';
-import { fileURLToPath } from 'url';
-import { query } from '../../../boilerplate/db/index.js';
 
+const { Pool } = pkg;
 const router = express.Router();
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
 
-// Configure multer for file uploads
-const storage = multer.diskStorage({
-  destination: (req, file, cb) => {
-    const uploadDir = path.join(__dirname, '../../../public/uploads/forum');
-    if (!fs.existsSync(uploadDir)) {
-      fs.mkdirSync(uploadDir, { recursive: true });
-    }
-    cb(null, uploadDir);
-  },
-  filename: (req, file, cb) => {
-    const uniqueSuffix = `${Date.now()}-${Math.round(Math.random() * 1E9)}`;
-    const ext = path.extname(file.originalname);
-    cb(null, `${file.fieldname}-${uniqueSuffix}${ext}`);
-  },
+// Database connection
+const pool = new Pool({
+  user: process.env.PGUSER || 'postgres',
+  host: process.env.PGHOST || 'localhost',
+  database: process.env.PGDATABASE || 'bh_db',
+  password: process.env.PGPASSWORD || '599121',
+  port: process.env.PGPORT || 5432,
 });
 
+// Multer configuration for memory storage (store in memory, then save to DB)
+const storage = multer.memoryStorage();
 const upload = multer({
   storage,
-  limits: { fileSize: 5 * 1024 * 1024 }, // 5MB limit
+  limits: { fileSize: 50 * 1024 * 1024 }, // 50MB limit
   fileFilter: (req, file, cb) => {
-    const allowedTypes = /jpeg|jpg|png|gif|webp/;
-    const ext = allowedTypes.test(path.extname(file.originalname).toLowerCase());
+    const allowedTypes = /jpeg|jpg|png|gif|mp4|webm|mov/;
+    const extname = allowedTypes.test(file.originalname.toLowerCase());
     const mimetype = allowedTypes.test(file.mimetype);
-    
-    if (ext && mimetype) {
+
+    if (mimetype && extname) {
       return cb(null, true);
     }
-    cb(new Error('Only images are allowed'));
+    cb(new Error('Only images and videos are allowed'));
   },
 });
 
-// Get all boards
-router.get(
-  '/boards',
-  asyncHandler(async (req, res) => {
-    const { rows } = await query(`
-      SELECT 
-        b.id, 
-        b.name, 
-        b.description,
-        COUNT(t.id) AS thread_count
-      FROM boards b
-      LEFT JOIN threads t ON b.id = t.board_id
-      GROUP BY b.id, b.name, b.description
-      ORDER BY b.id
-    `);
-    res.status(200).json(rows);
-  }),
-);
+// Utility function to generate random usernames
+const generateRandomUsername = () => {
+  const adjectives = ['Quantum', 'Cosmic', 'Stellar', 'Galactic', 'Nebular', 'Photon', 'Gravitational', 'Relativistic'];
+  const nouns = ['Physicist', 'Observer', 'Theorist', 'Researcher', 'Explorer', 'Scholar', 'Astronomer', 'Scientist'];
+  const randomNum = Math.floor(Math.random() * 9999) + 1;
 
-// Get a specific board with its threads
-router.get(
-  '/boards/:id',
-  asyncHandler(async (req, res) => {
-    const { id } = req.params;
-    
-    // Get board details
-    const boardResult = await query(
-      'SELECT id, name, description FROM boards WHERE id = $1',
-      [id],
-    );
-    
-    if (boardResult.rows.length === 0) {
-      return res.status(404).json({ message: 'Board not found' });
+  const adjective = adjectives[Math.floor(Math.random() * adjectives.length)];
+  const noun = nouns[Math.floor(Math.random() * nouns.length)];
+
+  return `${adjective}${noun}${randomNum}`;
+};
+
+// GET all topics
+router.get('/topics', async (req, res) => {
+  try {
+    const result = await pool.query(`
+            SELECT t.*, 
+                   COUNT(p.id) as post_count,
+                   MAX(p.created_at) as last_post_date
+            FROM forum_topics t
+            LEFT JOIN forum_posts p ON t.id = p.topic_id
+            GROUP BY t.id
+            ORDER BY t.created_at ASC
+        `);
+    res.json(result.rows);
+  } catch (error) {
+    console.error('Error fetching topics:', error);
+    res.status(500).json({ error: 'Failed to fetch topics' });
+  }
+});
+
+// GET posts by topic
+router.get('/topics/:topicId/posts', async (req, res) => {
+  try {
+    const { topicId } = req.params;
+    const { page = 1, limit = 20, sort = 'newest' } = req.query;
+    const offset = (page - 1) * limit;
+
+    let orderBy = 'p.created_at DESC';
+    if (sort === 'oldest') orderBy = 'p.created_at ASC';
+    else if (sort === 'popular') orderBy = 'p.likes_count DESC, p.created_at DESC';
+
+    const result = await pool.query(`
+            SELECT p.id, p.topic_id, p.title, p.content, p.author_name, p.post_type, 
+                   p.media_type, p.media_filename, p.likes_count, p.replies_count,
+                   p.is_pinned, p.created_at, p.updated_at,
+                   COUNT(r.id) as replies_count,
+                   t.title as topic_title
+            FROM forum_posts p
+            LEFT JOIN forum_replies r ON p.id = r.post_id
+            LEFT JOIN forum_topics t ON p.topic_id = t.id
+            WHERE p.topic_id = $1
+            GROUP BY p.id, t.title
+            ORDER BY p.is_pinned DESC, ${orderBy.replace('p.', 'p.')}
+            LIMIT $2 OFFSET $3
+        `, [topicId, limit, offset]);
+
+    // Add media URLs for posts that have media
+    const postsWithMedia = result.rows.map((post) => ({
+      ...post,
+      media_url: post.media_filename ? `/forum/media/${post.id}` : null,
+    }));
+
+    res.json(postsWithMedia);
+  } catch (error) {
+    console.error('Error fetching posts:', error);
+    res.status(500).json({ error: 'Failed to fetch posts' });
+  }
+});
+
+// GET single post with replies
+router.get('/posts/:postId', async (req, res) => {
+  try {
+    const { postId } = req.params;
+
+    // Get post details
+    const postResult = await pool.query(`
+            SELECT p.id, p.topic_id, p.title, p.content, p.author_name, p.post_type,
+                   p.media_type, p.media_filename, p.likes_count, p.replies_count,
+                   p.is_pinned, p.created_at, p.updated_at,
+                   t.title as topic_title, t.id as topic_id
+            FROM forum_posts p
+            LEFT JOIN forum_topics t ON p.topic_id = t.id
+            WHERE p.id = $1
+        `, [postId]);
+
+    if (postResult.rows.length === 0) {
+      return res.status(404).json({ error: 'Post not found' });
     }
-    
-    const board = boardResult.rows[0];
-    
-    // Get threads for this board
-    const threadsResult = await query(`
-      SELECT 
-        t.id, 
-        t.title, 
-        t.content,
-        t.created_at,
-        t.is_sticky,
-        u.username,
-        (SELECT COUNT(*) FROM comments c WHERE c.thread_id = t.id) AS comment_count,
-        COALESCE(
-          (SELECT SUM(CASE WHEN is_upvote THEN 1 ELSE -1 END) 
-           FROM votes 
-           WHERE thread_id = t.id), 
-          0
-        ) AS votes
-      FROM threads t
-      JOIN users u ON t.user_id = u.id
-      WHERE t.board_id = $1
-      ORDER BY t.is_sticky DESC, t.created_at DESC
-    `, [id]);
-    
-    board.threads = threadsResult.rows;
-    
-    res.status(200).json(board);
-  }),
-);
 
-// Get threads for a specific board
-router.get(
-  '/boards/:id/threads',
-  asyncHandler(async (req, res) => {
-    const { id } = req.params;
-    
-    const { rows } = await query(`
-      SELECT 
-        t.id, 
-        t.title, 
-        t.content,
-        t.created_at,
-        t.is_sticky,
-        u.username,
-        (SELECT COUNT(*) FROM comments c WHERE c.thread_id = t.id) AS comment_count,
-        COALESCE(
-          (SELECT SUM(CASE WHEN is_upvote THEN 1 ELSE -1 END) 
-           FROM votes 
-           WHERE thread_id = t.id), 
-          0
-        ) AS votes
-      FROM threads t
-      JOIN users u ON t.user_id = u.id
-      WHERE t.board_id = $1
-      ORDER BY t.is_sticky DESC, t.created_at DESC
-    `, [id]);
-    
-    res.status(200).json(rows);
-  }),
-);
+    // Get replies
+    const repliesResult = await pool.query(`
+            SELECT * FROM forum_replies 
+            WHERE post_id = $1 
+            ORDER BY created_at ASC
+        `, [postId]);
 
-// Create a new thread
-router.post(
-  '/threads',
-  upload.single('image'),
-  asyncHandler(async (req, res) => {
-    const { board_id, title, content } = req.body;
-    
-    // Get user ID from session
-    const userId = req.session.userId || 1; // Default to user 1 for testing
-    
-    // Handle file upload if present
-    const imageUrl = req.file 
-      ? `/uploads/forum/${path.basename(req.file.path)}` 
-      : null;
-    
-    const { rows } = await query(
-      `INSERT INTO threads 
-        (board_id, user_id, title, content, image_url) 
-       VALUES ($1, $2, $3, $4, $5) 
-       RETURNING id`,
-      [board_id, userId, title, content, imageUrl],
-    );
-    
-    res.status(201).json({ id: rows[0].id, message: 'Thread created successfully' });
-  }),
-);
+    const post = postResult.rows[0];
+    post.media_url = post.media_filename ? `/forum/media/${post.id}` : null;
+    post.replies = repliesResult.rows;
 
-// Get a thread with its comments
-router.get(
-  '/threads/:id',
-  asyncHandler(async (req, res) => {
-    const { id } = req.params;
-    
-    // Get thread details
-    const threadResult = await query(`
-      SELECT 
-        t.id, 
-        t.title, 
-        t.content,
-        t.created_at,
-        t.image_url,
-        t.is_sticky,
-        t.board_id,
-        u.username,
-        b.name AS board_name,
-        COALESCE(
-          (SELECT SUM(CASE WHEN is_upvote THEN 1 ELSE -1 END) 
-           FROM votes 
-           WHERE thread_id = t.id), 
-          0
-        ) AS votes
-      FROM threads t
-      JOIN users u ON t.user_id = u.id
-      JOIN boards b ON t.board_id = b.id
-      WHERE t.id = $1
-    `, [id]);
-    
-    if (threadResult.rows.length === 0) {
-      return res.status(404).json({ message: 'Thread not found' });
+    res.json(post);
+  } catch (error) {
+    console.error('Error fetching post:', error);
+    res.status(500).json({ error: 'Failed to fetch post' });
+  }
+});
+
+// TEST route for GIF upload debugging
+router.post('/test-gif-upload', upload.single('media'), async (req, res) => {
+  try {
+    console.log('TEST GIF UPLOAD:');
+    console.log('Body:', req.body);
+    console.log('File info:', req.file ? {
+      fieldname: req.file.fieldname,
+      originalname: req.file.originalname,
+      encoding: req.file.encoding,
+      mimetype: req.file.mimetype,
+      size: req.file.size,
+      bufferLength: req.file.buffer?.length,
+    } : 'No file');
+
+    if (req.file) {
+      // Try to examine the first few bytes of the file
+      const firstBytes = req.file.buffer.slice(0, 10);
+      console.log('First 10 bytes:', Array.from(firstBytes).map((b) => b.toString(16).padStart(2, '0')).join(' '));
+
+      // GIF files should start with 'GIF87a' or 'GIF89a'
+      const header = req.file.buffer.slice(0, 6).toString();
+      console.log('File header:', header);
+      console.log('Is valid GIF:', header.startsWith('GIF'));
     }
-    
-    const thread = threadResult.rows[0];
-    
-    // Get comments for this thread
-    const commentsResult = await query(`
-      SELECT 
-        c.id, 
-        c.content,
-        c.created_at,
-        c.image_url,
-        u.username,
-        COALESCE(
-          (SELECT SUM(CASE WHEN is_upvote THEN 1 ELSE -1 END) 
-           FROM votes 
-           WHERE comment_id = c.id), 
-          0
-        ) AS votes
-      FROM comments c
-      JOIN users u ON c.user_id = u.id
-      WHERE c.thread_id = $1
-      ORDER BY c.created_at ASC
-    `, [id]);
-    
-    thread.comments = commentsResult.rows;
-    
-    res.status(200).json(thread);
-  }),
-);
 
-// Add a comment to a thread
-router.post(
-  '/comments',
-  upload.single('image'),
-  asyncHandler(async (req, res) => {
-    const { thread_id, content } = req.body;
-    
-    // Get user ID from session
-    const userId = req.session.userId || 1; // Default to user 1 for testing
-    
-    // Handle file upload if present
-    const imageUrl = req.file 
-      ? `/uploads/forum/${path.basename(req.file.path)}` 
-      : null;
-    
-    const { rows } = await query(
-      `INSERT INTO comments 
-        (thread_id, user_id, content, image_url) 
-       VALUES ($1, $2, $3, $4) 
-       RETURNING id`,
-      [thread_id, userId, content, imageUrl],
-    );
-    
-    res.status(201).json({ id: rows[0].id, message: 'Comment added successfully' });
-  }),
-);
+    res.json({
+      message: 'Test upload received',
+      hasFile: !!req.file,
+      fileInfo: req.file ? {
+        name: req.file.originalname,
+        type: req.file.mimetype,
+        size: req.file.size,
+      } : null,
+    });
+  } catch (error) {
+    console.error('Test upload error:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
 
-// Search threads and comments
-router.get(
-  '/search',
-  asyncHandler(async (req, res) => {
-    const { query: searchQuery } = req.query;
-    
-    if (!searchQuery || searchQuery.trim().length < 3) {
-      return res.status(400).json({ message: 'Search query must be at least 3 characters' });
+// TEST route to check media serving
+router.get('/test-media/:postId', async (req, res) => {
+  try {
+    const { postId } = req.params;
+    console.log('TEST: Checking media for post ID:', postId);
+
+    const result = await pool.query(`
+            SELECT id, title, post_type, media_type, media_filename,
+                   CASE WHEN media_data IS NULL THEN 0 ELSE length(media_data) END as media_size
+            FROM forum_posts 
+            WHERE id = $1
+        `, [postId]);
+
+    if (result.rows.length === 0) {
+      return res.json({ error: 'Post not found' });
     }
-    
-    const { rows } = await query(`
-      SELECT 
-        t.id, 
-        t.title, 
-        t.content,
-        t.created_at,
-        u.username,
-        b.name AS board_name,
-        (SELECT COUNT(*) FROM comments c WHERE c.thread_id = t.id) AS comment_count
-      FROM threads t
-      JOIN users u ON t.user_id = u.id
-      JOIN boards b ON t.board_id = b.id
-      WHERE 
-        to_tsvector('english', t.title || ' ' || t.content) @@ plainto_tsquery('english', $1)
-      ORDER BY t.created_at DESC
-      LIMIT 20
-    `, [searchQuery]);
-    
-    res.status(200).json(rows);
-  }),
-);
+
+    const post = result.rows[0];
+    res.json({
+      post_info: post,
+      media_url_would_be: `/forum/media/${postId}`,
+      full_media_url: `http://localhost:5000/forum/media/${postId}`,
+    });
+  } catch (error) {
+    console.error('Error in test-media:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// SERVE media from database
+router.get('/media/:postId', async (req, res) => {
+  try {
+    const { postId } = req.params;
+    console.log('GET /media/:postId received for postId:', postId);
+
+    const result = await pool.query(`
+            SELECT media_data, media_type, media_filename
+            FROM forum_posts 
+            WHERE id = $1 AND media_data IS NOT NULL
+        `, [postId]);
+
+    console.log('Media query result:', {
+      found: result.rows.length > 0,
+      postId,
+      hasMediaData: result.rows[0]?.media_data ? 'Yes' : 'No',
+      mediaType: result.rows[0]?.media_type,
+      filename: result.rows[0]?.media_filename,
+    });
+
+    if (result.rows.length === 0) {
+      console.log('No media found for post ID:', postId);
+      return res.status(404).json({ error: 'Media not found' });
+    }
+
+    const { media_data, media_type, media_filename } = result.rows[0];
+
+    if (!media_data) {
+      console.log('Post found but no media data for post ID:', postId);
+      return res.status(404).json({ error: 'No media data found' });
+    }
+
+    console.log('Serving media:', {
+      type: media_type,
+      filename: media_filename,
+      size: media_data.length,
+      isGif: media_type === 'image/gif',
+    });
+
+    // Set appropriate headers for different media types
+    const headers = {
+      'Content-Type': media_type,
+      'Content-Length': media_data.length,
+      'Content-Disposition': `inline; filename="${media_filename}"`,
+      'Cache-Control': 'public, max-age=31536000', // Cache for 1 year
+      'Access-Control-Allow-Origin': '*', // Allow CORS for media
+    };
+
+    // Special handling for GIFs
+    if (media_type === 'image/gif') {
+      headers['Content-Type'] = 'image/gif';
+      // Ensure proper GIF headers
+      console.log('Serving GIF with special headers');
+    }
+
+    res.set(headers);
+
+    res.send(media_data);
+  } catch (error) {
+    console.error('Error serving media:', error);
+    console.error('Error stack:', error.stack);
+    res.status(500).json({ error: 'Failed to serve media' });
+  }
+});
+
+// CREATE new post
+router.post('/posts', upload.single('media'), async (req, res) => {
+  try {
+    console.log('POST /posts received');
+    console.log('Body:', req.body);
+    console.log('File:', req.file ? { name: req.file.originalname, size: req.file.size, type: req.file.mimetype } : 'No file');
+
+    const { topic_id, title, content, post_type = 'text' } = req.body;
+
+    // Parse topic_id as integer
+    const parsedTopicId = parseInt(topic_id);
+
+    // Validate required fields
+    if (!parsedTopicId || isNaN(parsedTopicId) || !title || !content) {
+      console.log('Missing or invalid required fields:', {
+        topic_id: parsedTopicId,
+        isValidTopicId: !isNaN(parsedTopicId),
+        title: !!title,
+        content: !!content,
+      });
+      return res.status(400).json({
+        error: 'Missing or invalid required fields',
+        details: {
+          topic_id: !parsedTopicId || isNaN(parsedTopicId) ? 'Required (must be a valid number)' : 'OK',
+          title: !title ? 'Required' : 'OK',
+          content: !content ? 'Required' : 'OK',
+        },
+      });
+    }
+
+    const author_name = generateRandomUsername();
+    console.log('Generated author name:', author_name);
+    console.log('Parsed topic_id:', parsedTopicId, 'type:', typeof parsedTopicId);
+
+    let media_data = null;
+    let media_type = null;
+    let media_filename = null;
+
+    if (req.file) {
+      media_data = req.file.buffer;
+      media_type = req.file.mimetype;
+      media_filename = req.file.originalname;
+
+      console.log('Processing media file:', {
+        filename: media_filename,
+        type: media_type,
+        size: req.file.size,
+        bufferLength: req.file.buffer.length,
+        isGif: media_type === 'image/gif',
+        post_type,
+      });
+
+      // Validate GIF files specifically
+      if (post_type === 'gif' && media_type !== 'image/gif') {
+        console.log('Warning: post_type is gif but media_type is not image/gif:', media_type);
+      }
+
+      // Ensure we have valid media data
+      if (!req.file.buffer || req.file.buffer.length === 0) {
+        console.log('Error: Empty media buffer');
+        return res.status(400).json({
+          error: 'Invalid media file',
+          details: 'Media file appears to be empty',
+        });
+      }
+    }
+
+    console.log('Inserting into database...');
+    const result = await pool.query(`
+            INSERT INTO forum_posts (topic_id, title, content, author_name, post_type, media_data, media_type, media_filename)
+            VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+            RETURNING id, topic_id, title, content, author_name, post_type, media_type, media_filename, likes_count, replies_count, is_pinned, created_at, updated_at
+        `, [parsedTopicId, title, content, author_name, post_type, media_data, media_type, media_filename]);
+
+    const post = result.rows[0];
+    post.media_url = media_filename ? `/forum/media/${post.id}` : null;
+
+    console.log('Post created successfully:', {
+      id: post.id,
+      title: post.title,
+      topic_id: post.topic_id,
+      post_type: post.post_type,
+      media_url: post.media_url,
+      media_type: post.media_type,
+      media_filename: post.media_filename,
+      hasMediaData: !!media_data,
+    });
+    res.status(201).json(post);
+  } catch (error) {
+    console.error('Error creating post:', error);
+    console.error('Error stack:', error.stack);
+    res.status(500).json({
+      error: 'Failed to create post',
+      details: error.message,
+    });
+  }
+});
+
+// UPDATE post
+router.put('/posts/:postId', upload.single('media'), async (req, res) => {
+  try {
+    const { postId } = req.params;
+    const { title, content, post_type } = req.body;
+
+    let updateQuery = `
+            UPDATE forum_posts 
+            SET title = $1, content = $2, post_type = $3, updated_at = CURRENT_TIMESTAMP
+        `;
+    const queryParams = [title, content, post_type];
+
+    if (req.file) {
+      updateQuery += `, media_data = $${queryParams.length + 1}, media_type = $${queryParams.length + 2}, media_filename = $${queryParams.length + 3}`;
+      queryParams.push(req.file.buffer, req.file.mimetype, req.file.originalname);
+    }
+
+    updateQuery += ` WHERE id = $${queryParams.length + 1} RETURNING id, topic_id, title, content, author_name, post_type, media_type, media_filename, likes_count, replies_count, is_pinned, created_at, updated_at`;
+    queryParams.push(postId);
+
+    const result = await pool.query(updateQuery, queryParams);
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: 'Post not found' });
+    }
+
+    const post = result.rows[0];
+    post.media_url = post.media_filename ? `/forum/media/${post.id}` : null;
+
+    res.json(post);
+  } catch (error) {
+    console.error('Error updating post:', error);
+    res.status(500).json({ error: 'Failed to update post' });
+  }
+});
+
+// DELETE post
+router.delete('/posts/:postId', async (req, res) => {
+  try {
+    const { postId } = req.params;
+
+    const result = await pool.query('DELETE FROM forum_posts WHERE id = $1 RETURNING *', [postId]);
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: 'Post not found' });
+    }
+
+    res.json({ message: 'Post deleted successfully', post: result.rows[0] });
+  } catch (error) {
+    console.error('Error deleting post:', error);
+    res.status(500).json({ error: 'Failed to delete post' });
+  }
+});
+
+// CREATE reply
+router.post('/posts/:postId/replies', async (req, res) => {
+  try {
+    console.log('POST /posts/:postId/replies received');
+    console.log('Post ID:', req.params.postId);
+    console.log('Body:', req.body);
+
+    const { postId } = req.params;
+    const { content, parent_reply_id = null } = req.body;
+
+    // Validate required fields
+    if (!content || content.trim().length === 0) {
+      console.log('Missing or empty content');
+      return res.status(400).json({
+        error: 'Content is required and cannot be empty',
+      });
+    }
+
+    const author_name = generateRandomUsername();
+    console.log('Generated author name:', author_name);
+
+    console.log('Inserting reply into database...');
+    const result = await pool.query(`
+            INSERT INTO forum_replies (post_id, parent_reply_id, content, author_name)
+            VALUES ($1, $2, $3, $4)
+            RETURNING *
+        `, [postId, parent_reply_id, content.trim(), author_name]);
+
+    console.log('Reply created:', result.rows[0]);
+
+    // Update replies count in the post
+    console.log('Updating replies count...');
+    await pool.query(`
+            UPDATE forum_posts 
+            SET replies_count = (SELECT COUNT(*) FROM forum_replies WHERE post_id = $1)
+            WHERE id = $1
+        `, [postId]);
+
+    console.log('Reply creation successful');
+    res.status(201).json(result.rows[0]);
+  } catch (error) {
+    console.error('Error creating reply:', error);
+    console.error('Error stack:', error.stack);
+    res.status(500).json({
+      error: 'Failed to create reply',
+      details: error.message,
+    });
+  }
+});
+
+// UPDATE reply
+router.put('/replies/:replyId', async (req, res) => {
+  try {
+    const { replyId } = req.params;
+    const { content } = req.body;
+
+    const result = await pool.query(`
+            UPDATE forum_replies 
+            SET content = $1, updated_at = CURRENT_TIMESTAMP
+            WHERE id = $2
+            RETURNING *
+        `, [content, replyId]);
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: 'Reply not found' });
+    }
+
+    res.json(result.rows[0]);
+  } catch (error) {
+    console.error('Error updating reply:', error);
+    res.status(500).json({ error: 'Failed to update reply' });
+  }
+});
+
+// DELETE reply
+router.delete('/replies/:replyId', async (req, res) => {
+  try {
+    const { replyId } = req.params;
+
+    const result = await pool.query('DELETE FROM forum_replies WHERE id = $1 RETURNING *', [replyId]);
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: 'Reply not found' });
+    }
+
+    res.json({ message: 'Reply deleted successfully', reply: result.rows[0] });
+  } catch (error) {
+    console.error('Error deleting reply:', error);
+    res.status(500).json({ error: 'Failed to delete reply' });
+  }
+});
+
+// LIKE/UNLIKE post
+router.post('/posts/:postId/like', async (req, res) => {
+  try {
+    const { postId } = req.params;
+    const { action } = req.body; // 'like' or 'unlike'
+
+    const increment = action === 'like' ? 1 : -1;
+
+    const result = await pool.query(`
+            UPDATE forum_posts 
+            SET likes_count = GREATEST(0, likes_count + $1)
+            WHERE id = $2
+            RETURNING likes_count
+        `, [increment, postId]);
+
+    res.json({ likes_count: result.rows[0].likes_count });
+  } catch (error) {
+    console.error('Error updating likes:', error);
+    res.status(500).json({ error: 'Failed to update likes' });
+  }
+});
+
+// Search GIFs using Tenor API
+router.get('/gifs/search', async (req, res) => {
+  try {
+    const { q, limit = 20 } = req.query;
+    const apiKey = process.env.TENOR_API_KEY;
+
+    if (!apiKey) {
+      return res.status(500).json({ error: 'Tenor API key not configured' });
+    }
+
+    const response = await axios.get('https://tenor.googleapis.com/v2/search', {
+      params: {
+        q,
+        key: apiKey,
+        limit,
+        media_filter: 'gif',
+        contentfilter: 'high',
+      },
+    });
+
+    res.json(response.data);
+  } catch (error) {
+    console.error('Error searching GIFs:', error);
+    res.status(500).json({ error: 'Failed to search GIFs' });
+  }
+});
+
+// Get trending GIFs
+router.get('/gifs/trending', async (req, res) => {
+  try {
+    const { limit = 20 } = req.query;
+    const apiKey = process.env.TENOR_API_KEY;
+
+    if (!apiKey) {
+      return res.status(500).json({ error: 'Tenor API key not configured' });
+    }
+
+    const response = await axios.get('https://tenor.googleapis.com/v2/featured', {
+      params: {
+        key: apiKey,
+        limit,
+        media_filter: 'gif',
+        contentfilter: 'high',
+      },
+    });
+
+    res.json(response.data);
+  } catch (error) {
+    console.error('Error fetching trending GIFs:', error);
+    res.status(500).json({ error: 'Failed to fetch trending GIFs' });
+  }
+});
 
 export default router;

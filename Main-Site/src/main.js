@@ -1,5 +1,5 @@
 import { createApp } from 'vue';
-import { Quasar } from 'quasar';
+import { Quasar, Notify } from 'quasar';
 import quasarIconSet from 'quasar/icon-set/svg-fontawesome-v6';
 import { createPinia } from 'pinia'; // Pinia importieren
 
@@ -9,7 +9,7 @@ import '@quasar/extras/fontawesome-v6/fontawesome-v6.css';
 
 // Import Quasar css
 import 'quasar/src/css/index.sass';
-import './assets/css/forum-styles.css'; //
+
 
 
 import App from './App.vue';
@@ -23,8 +23,9 @@ app.use(pinia); // Pinia zur App hinzufügen
 
 // Quasar konfigurieren
 app.use(Quasar, {
-  plugins: {}, // Quasar-Plugins hier hinzufügen
+  plugins: {  Notify }, // Quasar-Plugins hier hinzufügen
   iconSet: quasarIconSet,
+
 });
 
 // Router zur App hinzufügen

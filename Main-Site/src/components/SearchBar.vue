@@ -59,7 +59,7 @@
     if (!searchQuery.value.trim()) return;
     
     try {
-      const response = await api.get('/forum/search', {
+      const response = await api.get('/search', {
         params: { q: searchQuery.value }
       });
       

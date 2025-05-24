@@ -35,35 +35,6 @@ const routes = [
       transition: "fade", // Standard-Animation für geschützte Routen
     },
   },
-  {
-    path: '/forum',
-    name: 'Forum',
-    component: () => import('../views/ForumView.vue'),
-    meta: { 
-      // requiresAuth: true,
-      transition: 'fade',
-    },
-  },
-  {
-    path: '/board/:boardId',
-    name: 'Board',
-    component: () => import('../views/BoardView.vue'),
-    meta: {
-      // requiresAuth: true,
-      transition: 'fade',
-    },
-    props: true
-  },
-  {
-    path: '/thread/:threadId',
-    name: 'Thread',
-    component: () => import('../views/ThreadView.vue'),
-    meta: {
-      requiresAuth: true,
-      transition: 'fade',
-    },
-    props: true
-  },
   
   {
     path: "/kurse",
@@ -73,6 +44,19 @@ const routes = [
       // requiresAuth: true,
       transition: "fade", // Standard-Animation für geschützte Routen
     },
+  },
+   {
+    path: '/forum',
+    name: 'forum',
+    component: () => import('../views/ForumPage.vue'), // Adjust path as needed
+    meta: { title: 'Black Hole Physics Forum' }
+  },
+  {
+    path: '/forum/post/:id',
+    name: 'forum-post', 
+    component: () => import('../views/ForumPage.vue'),
+    props: true,
+    meta: { title: 'Discussion' }
   },
   {
     path: "/dashboard",
@@ -84,11 +68,11 @@ const routes = [
     },
   },
   {
-    path: '/deepseek',
-    name: 'Deepseek',
-    component: () => import('../views/DeepseekView.vue'),
+    path: "/deepseek",
+    name: "Deepseek",
+    component: () => import("../views/DeepseekView.vue"),
     meta: {
-      transition: 'fade',
+      transition: "fade",
     },
   },
 ];

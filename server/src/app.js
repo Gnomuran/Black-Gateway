@@ -125,6 +125,7 @@ app.use('/test', testRoute);
 app.use('/users', usersRoute);
 app.use('/info', kurseRoute);
 app.use('/forum', forumRoute);
+app.use('/uploads', express.static('public/uploads'));
 app.use('/deepseek', deepseekRoute);
 
 // 🔹 Error handler for file uploads
