@@ -13,6 +13,10 @@ export const useNasaStore = defineStore("nasa", () => {
   const isLoading = ref(false);
   const error = ref(null);
   const nasaMedia = ref([]);
+  
+  // 🆕 Zusätzlicher State für User-spezifische APOD Daten
+  const userApodDate = ref(null);
+  const isUserApod = ref(false);
 
   // Media-Suche (Bildarchiv)
   async function fetchNasaMedia(query) {
@@ -39,6 +43,21 @@ export const useNasaStore = defineStore("nasa", () => {
       : apodData.value.thumbnail_url;
   });
 
+  // 🆕 Computed für APOD Metadaten
+  const apodInfo = computed(() => {
+    if (!apodData.value) return null;
+    
+    return {
+      title: apodData.value.title,
+      date: apodData.value.date,
+      explanation: apodData.value.explanation,
+      mediaType: apodData.value.media_type,
+      copyright: apodData.value.copyright || null,
+      isUserSpecific: isUserApod.value,
+      userDate: userApodDate.value
+    };
+  });
+
   // Astronomy Picture of the Day (mit optionalem Datum)
   async function fetchAPOD(date = null) {
     try {
@@ -53,6 +72,16 @@ export const useNasaStore = defineStore("nasa", () => {
       
       const response = await axios.get(url, { params });
       apodData.value = response.data;
+      
+      // 🆕 Tracking ob es ein User-spezifisches APOD ist
+      if (date) {
+        userApodDate.value = date;
+        isUserApod.value = true;
+      } else {
+        userApodDate.value = null;
+        isUserApod.value = false;
+      }
+      
     } catch (err) {
       error.value = err.message;
       console.error("APOD Fehler:", err);
@@ -60,6 +89,78 @@ export const useNasaStore = defineStore("nasa", () => {
       isLoading.value = false;
     }
   }
+
+  // 🆕 Spezielle Funktion für User-Registration APOD
+  async function fetchUserRegistrationAPOD(registrationDate) {
+    if (!registrationDate) {
+      throw new Error('Registrierungsdatum ist erforderlich');
+    }
+    
+    try {
+      console.log(`Lade APOD für User-Registrierung vom: ${registrationDate}`);
+      await fetchAPOD(registrationDate);
+      
+      return {
+        success: true,
+        date: registrationDate,
+        title: apodData.value?.title,
+        isSpecialDate: true
+      };
+    } catch (error) {
+      console.error('Fehler beim Laden des User-Registration APOD:', error);
+      
+      // Fallback auf heutiges APOD
+      await fetchAPOD();
+      
+      return {
+        success: false,
+        error: error.message,
+        fallbackUsed: true
+      };
+    }
+  }
+
+  // 🆕 APOD für einen bestimmten Tag in der Vergangenheit
+  async function fetchAPODDaysAgo(daysAgo) {
+    const date = new Date();
+    date.setDate(date.getDate() - daysAgo);
+    const dateString = date.toISOString().split('T')[0];
+    
+    return await fetchAPOD(dateString);
+  }
+
+  // 🆕 Zurück zum heutigen APOD wechseln
+  async function fetchTodaysAPOD() {
+    userApodDate.value = null;
+    isUserApod.value = false;
+    return await fetchAPOD();
+  }
+
+  // 🆕 Prüfen ob das aktuelle APOD user-spezifisch ist
+  const isCurrentApodUserSpecific = computed(() => {
+    return isUserApod.value && userApodDate.value !== null;
+  });
+
+  // 🆕 Datum des aktuell angezeigten APOD
+  const currentApodDate = computed(() => {
+    return apodData.value?.date || null;
+  });
+
+  // 🆕 Formatiertes Datum für UI
+  const formattedApodDate = computed(() => {
+    if (!apodData.value?.date) return null;
+    
+    try {
+      const date = new Date(apodData.value.date + 'T00:00:00');
+      return date.toLocaleDateString('de-DE', {
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric'
+      });
+    } catch (error) {
+      return apodData.value.date;
+    }
+  });
 
   // Mars Rover Fotos (Datum oder Sol optional)
   async function fetchMarsPhotos(
@@ -133,6 +234,14 @@ export const useNasaStore = defineStore("nasa", () => {
     }
   }
 
+  // 🆕 Store zurücksetzen
+  const resetApodData = () => {
+    apodData.value = null;
+    userApodDate.value = null;
+    isUserApod.value = false;
+    error.value = null;
+  };
+
   // Export
   return {
     // State
@@ -143,9 +252,17 @@ export const useNasaStore = defineStore("nasa", () => {
     isLoading,
     error,
     nasaMedia,
+    // 🆕 Neue State-Variablen
+    userApodDate,
+    isUserApod,
 
     // Getter
     apodImageUrl,
+    // 🆕 Neue Computed Properties
+    apodInfo,
+    isCurrentApodUserSpecific,
+    currentApodDate,
+    formattedApodDate,
 
     // Actions
     fetchNasaMedia,
@@ -153,5 +270,10 @@ export const useNasaStore = defineStore("nasa", () => {
     fetchMarsPhotos,
     fetchEPICImages,
     fetchAsteroids,
+    // 🆕 Neue Funktionen
+    fetchUserRegistrationAPOD,
+    fetchAPODDaysAgo,
+    fetchTodaysAPOD,
+    resetApodData,
   };
 });
