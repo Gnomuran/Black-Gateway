@@ -7,207 +7,463 @@
     
     <!-- Overlay Content -->
     <div class="overlay-content">
-      <!-- Hero Section mit klarerer User Journey -->
-      <section class="hero-section">
-        <div class="hero-content">   
-          <h1 class=" text-accent">Black Gateway</h1>
-          <p class="subtitle">Deine personalisierte Lernplattform mit NASA-Integration</p>
-          
-          <!-- Klarere User Journey -->
-          <div class="user-journey">
-            <div class="journey-option new-user">
-              <div class="journey-header">
-                <q-icon name="mdi-account-plus" size="24px" color="accent" />
-                <h3 >Ich bin neu hier</h3>
+      
+      <!-- Hero Section -->
+      <q-section class="hero-section">
+        <div class="row justify-center">
+          <div class="col-12 col-md-8 text-center">
+            <div class="q-pa-xl">
+              <h1 class="text-h2 text-accent q-mb-md">Black Gateway</h1>
+              <p class="text-h5 text-white q-mb-xl">
+                Deine personalisierte Lernplattform mit NASA-Integration
+              </p>
+              
+              <!-- Eingeloggte Benutzer - Personalisierte Begrüßung -->
+              <div v-if="isLoggedIn" class="logged-in-section">
+                <q-card class="welcome-card" dark>
+                  <q-card-section class="text-center">
+                    <!-- NASA APOD Avatar oder Fallback -->
+                    <div class="nasa-avatar-container q-mb-md">
+                      <q-avatar 
+                        size="120px" 
+                        class="nasa-avatar"
+                        :class="{ 'loading-avatar': loadingUserApod }"
+                      >
+                        <!-- Zeige User APOD wenn verfügbar -->
+                        <img 
+                          v-if="userApodImage && !loadingUserApod" 
+                          :src="userApodImage" 
+                          :alt="userApodInfo?.title || 'NASA APOD'"
+                          class="apod-image"
+                        />
+                        <!-- Loading Spinner -->
+                        <q-spinner-dots 
+                          v-else-if="loadingUserApod" 
+                          color="accent" 
+                          size="40px" 
+                        />
+                        <!-- Fallback Icon -->
+                        <q-icon 
+                          v-else 
+                          name="mdi-telescope" 
+                          size="60px" 
+                          color="accent" 
+                        />
+                      </q-avatar>
+                      
+                      <!-- NASA Badge -->
+                      <q-badge 
+                        v-if="userApodImage && !loadingUserApod"
+                        color="accent" 
+                        text-color="dark" 
+                        class="nasa-badge"
+                      >
+                        NASA APOD
+                      </q-badge>
+                    </div>
+                    
+                    <div class="text-h4 text-white q-mb-sm">
+                      Willkommen zurück, {{ currentUser?.username }}!
+                    </div>
+                    
+                    <!-- NASA APOD Info -->
+                    <div v-if="userApodInfo && !loadingUserApod" class="nasa-info q-mb-md">
+                      <div class="text-subtitle1 text-accent q-mb-xs">
+                        "{{ userApodInfo.title }}"
+                      </div>
+                      <div class="text-caption text-grey-4">
+                        Dein NASA-Bild vom {{ nasaStore.formattedApodDate }}
+                      </div>
+                    </div>
+                    
+                    <div v-if="userRegistrationInfo && !userApodInfo" class="text-body1 text-grey-3 q-mb-md">
+                      {{ userRegistrationInfo.message }}
+                    </div>
+                    
+                    <div class="row q-gutter-md justify-center q-mt-lg">
+                      <q-btn
+                        color="info"
+                        text-color="dark"
+                        label="Weiter lernen"
+                        size="lg"
+                        rounded
+                        unelevated
+                        icon="mdi-book-open-page-variant"
+                        @click="goToLearning"
+                      />
+                      
+                    </div>
+                    
+                    <!-- NASA APOD Details Expandable -->
+                    <q-expansion-item 
+                      v-if="userApodInfo && !loadingUserApod"
+                      class="q-mt-md nasa-details"
+                      icon="mdi-information"
+                      label="Mehr über dein NASA-Bild"
+                      dense
+                      dark
+                    >
+                      <q-card-section class="text-left q-pt-md">
+                        <div class="text-body2 text-grey-3" style="max-height: 150px; overflow-y: auto;">
+                          {{ userApodInfo.explanation }}
+                        </div>
+                        
+                        <div v-if="userApodInfo.copyright" class="text-caption text-grey-5 q-mt-sm">
+                          © {{ userApodInfo.copyright }}
+                        </div>
+                        
+                        <div class="text-caption text-grey-5 q-mt-xs">
+                          Medientyp: {{ userApodInfo.mediaType === 'image' ? 'Bild' : 'Video' }}
+                        </div>
+                      </q-card-section>
+                    </q-expansion-item>
+                  </q-card-section>
+                </q-card>
+                
+                <div class="q-mt-lg">
+                  <q-btn
+                    flat
+                    color="grey-5"
+                    label="Abmelden"
+                    icon="mdi-logout"
+                    @click="handleLogout"
+                  />
+                </div>
               </div>
-              <p>Erstelle deinen Account und erhalte dein persönliches NASA-Bild</p>
+              
+              <!-- Nicht eingeloggte Benutzer - Standard Journey Cards -->
+              <div v-else>
+                <div class="row q-gutter-lg justify-center q-mb-xl">
+                  <div class="col-12 col-sm-5">
+                    <q-card class="journey-card" dark>
+                      <q-card-section class="text-center">
+                        <q-icon name="mdi-account-plus" size="48px" color="accent" class="q-mb-md" />
+                        <div class="text-h6 q-mb-sm">Neu hier?</div>
+                        <p class="text-body2 q-mb-md">
+                          Erstelle deinen Account und erhalte dein persönliches NASA-Bild
+                        </p>
+                        <q-btn
+                          color="accent"
+                          text-color="dark"
+                          label="Kostenlos registrieren"
+                          size="lg"
+                          rounded
+                          unelevated
+                          icon="mdi-rocket-launch"
+                          @click="goToRegister"
+                          class="full-width"
+                        />
+                      </q-card-section>
+                    </q-card>
+                  </div>
+                  
+                  <div class="col-12 col-sm-5">
+                    <q-card class="journey-card" dark bordered>
+                      <q-card-section class="text-center">
+                        <q-icon name="mdi-account-check" size="48px" color="info" class="q-mb-md" />
+                        <div class="text-h6 q-mb-sm">Bereits dabei?</div>
+                        <p class="text-body2 q-mb-md">
+                          Melde dich an und setze deine Lernreise fort
+                        </p>
+                        <q-btn
+                          outline
+                          color="white"
+                          label="Anmelden"
+                          size="lg"
+                          rounded
+                          icon="mdi-login"
+                          @click="goToLogin"
+                          class="full-width"
+                        />
+                      </q-card-section>
+                    </q-card>
+                  </div>
+                </div>
+                
+                <!-- Preview Button -->
+                <q-btn
+                  flat
+                  color="accent"
+                  label="Erst mal schauen"
+                  icon="mdi-eye"
+                  @click="scrollToPreview"
+                />
+              </div>
+            </div>
+          </div>
+        </div>
+      </q-section>
+
+      <!-- Preview Section -->
+      <q-section class="preview-section" ref="previewSection">
+        <div class="row justify-center">
+          <div class="col-12 col-lg-10">
+            <h2 class="text-h3 text-center text-white q-mb-xl">
+              So sieht deine Lernerfahrung aus
+            </h2>
+            
+            <div class="row q-gutter-lg">
+              <div class="col-12 col-md-4">
+                <q-card class="demo-card" dark>
+                  <q-card-section>
+                    <div class="row items-center no-wrap">
+                      <q-icon name="mdi-account-star" size="32px" color="accent" />
+                      <div class="col q-ml-md">
+                        <div class="text-h6">NASA-Profil</div>
+                      </div>
+                    </div>
+                  </q-card-section>
+                  
+                  <q-card-section class="q-pt-none">
+                    <q-item dark class="q-pa-none">
+                      <q-item-section avatar>
+                        <q-avatar color="accent" text-color="dark" icon="mdi-telescope" />
+                      </q-item-section>
+                      <q-item-section>
+                        <q-item-label class="text-white">Dein Username</q-item-label>
+                        <q-item-label caption>NASA-Bild vom Registrierungstag</q-item-label>
+                      </q-item-section>
+                    </q-item>
+                    
+                    <p class="text-body2 q-mt-md">
+                      Erhalte dein einzigartiges NASA Astronomie-Bild als Profilbild
+                    </p>
+                  </q-card-section>
+                </q-card>
+              </div>
+              
+              <div class="col-12 col-md-4">
+                <q-card class="demo-card" dark>
+                  <q-card-section>
+                    <div class="row items-center no-wrap">
+                      <q-icon name="mdi-book-multiple" size="32px" color="info" />
+                      <div class="col q-ml-md">
+                        <div class="text-h6">Lernmodule</div>
+                      </div>
+                    </div>
+                  </q-card-section>
+                  
+                  <q-card-section class="q-pt-none">
+                    <q-list dark>
+                      <q-item>
+                        <q-item-section avatar>
+                          <q-icon name="mdi-check-circle" color="positive" />
+                        </q-item-section>
+                        <q-item-section>
+                          <q-item-label>Modul 1 - Abgeschlossen</q-item-label>
+                        </q-item-section>
+                      </q-item>
+                      
+                      <q-item>
+                        <q-item-section avatar>
+                          <q-icon name="mdi-play-circle" color="accent" />
+                        </q-item-section>
+                        <q-item-section>
+                          <q-item-label>Modul 2 - Aktiv</q-item-label>
+                        </q-item-section>
+                      </q-item>
+                      
+                      <q-item>
+                        <q-item-section avatar>
+                          <q-icon name="mdi-circle-outline" color="grey" />
+                        </q-item-section>
+                        <q-item-section>
+                          <q-item-label>Modul 3 - Gesperrt</q-item-label>
+                        </q-item-section>
+                      </q-item>
+                    </q-list>
+                    
+                    <p class="text-body2 q-mt-md">
+                      Strukturierte Lerninhalte mit automatischer Fortschrittsverfolgung
+                    </p>
+                  </q-card-section>
+                </q-card>
+              </div>
+              
+              <div class="col-12 col-md-4">
+                <q-card class="demo-card" dark>
+                  <q-card-section>
+                    <div class="row items-center no-wrap">
+                      <q-icon name="mdi-forum" size="32px" color="positive" />
+                      <div class="col q-ml-md">
+                        <div class="text-h6">Community</div>
+                      </div>
+                    </div>
+                  </q-card-section>
+                  
+                  <q-card-section class="q-pt-none">
+                    <q-chip
+                      v-for="topic in forumTopics"
+                      :key="topic"
+                      :label="topic"
+                      color="dark"
+                      text-color="white"
+                      class="q-ma-xs"
+                    />
+                    
+                    <p class="text-body2 q-mt-md">
+                      Tausche dich mit anderen Lernenden aus und stelle Fragen
+                    </p>
+                  </q-card-section>
+                </q-card>
+              </div>
+            </div>
+          </div>
+        </div>
+      </q-section>
+
+      <!-- Steps Section -->
+      <q-section class="steps-section">
+        <div class="row justify-center">
+          <div class="col-12 col-lg-8">
+            <h2 class="text-h3 text-center text-white q-mb-xl">
+              3 Schritte zu deinem Lernerfolg
+            </h2>
+            
+            <q-timeline color="accent" class="q-mb-xl">
+              <q-timeline-entry
+                v-for="(step, index) in steps"
+                :key="index"
+                :icon="step.icon"
+                :color="step.color"
+              >
+                <template v-slot:title>
+                  <div class="text-h6 text-white">{{ step.title }}</div>
+                </template>
+                <div class="text-body1 text-grey-3">
+                  {{ step.description }}
+                </div>
+              </q-timeline-entry>
+            </q-timeline>
+            
+            <div class="text-center">
               <q-btn
+                v-if="!isLoggedIn"
                 color="accent"
                 text-color="dark"
-                label="Kostenlos registrieren"
-                size="lg"
+                label="Jetzt starten - kostenlos!"
+                size="xl"
                 rounded
-                no-caps
+                unelevated
                 icon="mdi-rocket-launch"
                 @click="goToRegister"
-                class="journey-btn primary"
+                class="q-px-xl"
               />
-            </div>
-            
-            <div class="journey-divider">
-              <span>oder</span>
-            </div>
-            
-            <div class="journey-option existing-user">
-              <div class="journey-header">
-                <q-icon name="mdi-account-check" size="24px" color="info" />
-                <h3>Ich habe bereits einen Account</h3>
-              </div>
-              <p>Melde dich an und setze deine Lernreise fort</p>
-              <q-btn
-                flat
-                color="white"
-                label="Anmelden"
-                size="lg"
-                rounded
-                no-caps
-                icon="mdi-login"
-                @click="goToLogin"
-                class="journey-btn secondary"
-              />
-            </div>
-          </div>
-          
-          <!-- Quick Preview Button -->
-          <div class="preview-section">
-            <q-btn
-              flat
-              color="accent"
-              label="Erst mal schauen"
-              size="md"
-              no-caps
-              icon="mdi-eye"
-              @click="scrollToPreview"
-              class="preview-btn"
-            />
-          </div>
-        </div>
-      </section>
-
-      <!-- Interactive Preview Section -->
-      <section class="preview-section-content" ref="previewSection">
-        <div class="preview-container">
-          <h2 class="preview-title">So sieht deine Lernerfahrung aus</h2>
-          
-          <!-- Interactive Demo Cards -->
-          <div class="demo-cards">
-            <div class="demo-card" :class="{ active: activeDemo === 'profile' }" @click="setActiveDemo('profile')">
-              <div class="demo-header">
-                <q-icon name="mdi-account-star" size="32px" color="accent" />
-                <h3>Dein NASA-Profil</h3>
-              </div>
-              <div class="demo-preview">
-                <div class="mock-profile">
-                  <div class="mock-avatar">
-                    <q-icon name="mdi-telescope" size="24px" />
-                  </div>
-                  <div class="mock-info">
-                    <div class="mock-name">Dein Username</div>
-                    <div class="mock-date">NASA-Bild vom Registrierungstag</div>
-                  </div>
-                </div>
-              </div>
-              <p>Erhalte dein einzigartiges NASA Astronomie-Bild als Profilbild</p>
-            </div>
-
-            <div class="demo-card" :class="{ active: activeDemo === 'modules' }" @click="setActiveDemo('modules')">
-              <div class="demo-header">
-                <q-icon name="mdi-book-multiple" size="32px" color="info" />
-                <h3>Lernmodule</h3>
-              </div>
-              <div class="demo-preview">
-                <div class="mock-modules">
-                  <div class="mock-module completed">✓ Modul 1</div>
-                  <div class="mock-module active">► Modul 2</div>
-                  <div class="mock-module">○ Modul 3</div>
-                </div>
-              </div>
-              <p>Strukturierte Lerninhalte mit automatischer Fortschrittsverfolgung</p>
-            </div>
-
-            <div class="demo-card" :class="{ active: activeDemo === 'forum' }" @click="setActiveDemo('forum')">
-              <div class="demo-header">
-                <q-icon name="mdi-forum" size="32px" color="positive" />
-                <h3>Community Forum</h3>
-              </div>
-              <div class="demo-preview">
-                <div class="mock-forum">
-                  <div class="mock-post"> Diskussion über...</div>
-                  <div class="mock-post"> Beliebtes Thema</div>
-                  <div class="mock-post"> Frage & Antwort</div>
-                </div>
-              </div>
-              <p>Tausche dich mit anderen Lernenden aus und stelle Fragen</p>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      <!-- Simplified Features Section -->
-      <section class="features-section">
-        <div class="features-container">
-          <h2 class="features-title">3 Schritte zu deinem Lernerfolg</h2>
-          
-          <div class="steps-visual">
-            <div class="step-visual" v-for="(step, index) in steps" :key="index">
-              <div class="step-circle">
-                <q-icon :name="step.icon" size="32px" :color="step.color" />
-              </div>
-              <h3>{{ step.title }}</h3>
-              <p>{{ step.description }}</p>
               
-              <!-- Visual Connection -->
-              <div v-if="index < steps.length - 1" class="step-connector">
-                <q-icon name="mdi-arrow-down" size="24px" color="accent" />
-              </div>
+              <q-btn
+                v-else
+                color="info"
+                text-color="primary"
+                label="Zu den Lernmodulen"
+                size="xl"
+                rounded
+                unelevated
+                icon="mdi-book-open-page-variant"
+                @click="goToLearning"
+                class="q-px-xl"
+              />
             </div>
           </div>
-          
-          <!-- Call to Action -->
-          <div class="steps-cta">
-            <q-btn
-              color="accent"
-              text-color="dark"
-              label="Jetzt starten - es ist kostenlos!"
-              size="xl"
-              rounded
-              no-caps
-              icon="mdi-rocket-launch"
-              @click="goToRegister"
-              class="main-cta"
-            />
-            
-          </div>
         </div>
-      </section>
+      </q-section>
 
-      <!-- Trust & FAQ Section -->
-      <section class="trust-section">
-        <div class="trust-container">
-          <h2>FAQ</h2>
-          
-          <div class="faq-list">
-            <div class="faq-item" v-for="(faq, index) in faqs" :key="index" @click="toggleFaq(index)">
-              <div class="faq-question">
-                <span>{{ faq.question }}</span>
-                <q-icon :name="openFaq === index ? 'mdi-chevron-up' : 'mdi-chevron-down'" />
-              </div>
-              <div v-if="openFaq === index" class="faq-answer">
-                <p>{{ faq.answer }}</p>
-              </div>
-            </div>
+      <!-- FAQ Section -->
+      <q-section class="faq-section">
+        <div class="row justify-center">
+          <div class="col-12 col-lg-8">
+            <h2 class="text-h3 text-center text-white q-mb-xl">FAQ</h2>
+            
+            <q-list>
+              <q-expansion-item
+                v-for="(faq, index) in faqs"
+                :key="index"
+                :label="faq.question"
+                :header-class="'text-white text-weight-medium'"
+                class="faq-item q-mb-sm"
+                dark
+              >
+                <q-card dark class="bg-transparent">
+                  <q-card-section class="text-grey-3">
+                    {{ faq.answer }}
+                  </q-card-section>
+                </q-card>
+              </q-expansion-item>
+            </q-list>
           </div>
         </div>
-      </section>
+      </q-section>
+      
     </div>
   </div>
 </template>
 
 <script setup>
-import { ref } from 'vue';
+import { ref, computed, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
 import { useAuthStore } from '../stores/auth';
+import { useNasaStore } from '../stores/nasa';
 import ThreeModel from '@/components/ThreeModel.vue';
 
 const router = useRouter();
 const authStore = useAuthStore();
+const nasaStore = useNasaStore();
 
 // Refs
 const previewSection = ref(null);
-const activeDemo = ref('profile');
-const openFaq = ref(null);
+const loadingUserApod = ref(false);
+
+// Computed für Auth-Status
+const isLoggedIn = computed(() => authStore.isAuthenticated);
+const currentUser = computed(() => authStore.user);
+const userRegistrationInfo = computed(() => authStore.getUserRegistrationInfo());
+
+// Computed für NASA User APOD
+const userApodImage = computed(() => {
+  return nasaStore.apodImageUrl && nasaStore.isCurrentApodUserSpecific 
+    ? nasaStore.apodImageUrl 
+    : null;
+});
+
+const userApodInfo = computed(() => {
+  return nasaStore.isCurrentApodUserSpecific ? nasaStore.apodInfo : null;
+});
+
+// Session und User APOD beim Component-Load prüfen
+onMounted(async () => {
+  await authStore.checkSession();
+  
+  // Wenn User eingeloggt ist, lade sein Registration-APOD
+  if (authStore.isAuthenticated && authStore.hasUserCreationDate()) {
+    await loadUserApod();
+  }
+});
+
+// User-spezifisches APOD laden
+const loadUserApod = async () => {
+  try {
+    loadingUserApod.value = true;
+    const userNasaDate = authStore.getUserCreationDateForNasa();
+    
+    if (userNasaDate) {
+      console.log('Lade User APOD für Datum:', userNasaDate);
+      const result = await nasaStore.fetchUserRegistrationAPOD(userNasaDate);
+      
+      if (result.success) {
+        console.log('User APOD erfolgreich geladen:', result.title);
+      } else {
+        console.warn('Fallback APOD verwendet:', result.error);
+      }
+    }
+  } catch (error) {
+    console.error('Fehler beim Laden des User APOD:', error);
+  } finally {
+    loadingUserApod.value = false;
+  }
+};
 
 // Data
+const forumTopics = ['Astrophysik', 'Raumfahrt', 'Planeten', 'Galaxien'];
+
 const steps = [
   {
     icon: 'mdi-account-plus',
@@ -230,7 +486,6 @@ const steps = [
 ];
 
 const faqs = [
- 
   {
     question: 'Was ist das NASA-Bild genau?',
     answer: 'Du erhältst das offizielle NASA "Astronomy Picture of the Day" von dem Tag, an dem du dich registriert hast. Das wird dein einzigartiges Profilbild.'
@@ -254,21 +509,31 @@ const goToLogin = () => {
   router.push('/login');
 };
 
+const goToLearning = () => {
+  router.push('/kurse'); // oder dashboard oder der Hauptlernbereich
+};
+
+const goToProfile = () => {
+  router.push('/profile');
+};
+
+const handleLogout = async () => {
+  try {
+    await authStore.logout();
+    // Nach dem Logout zur Startseite oder Login-Seite weiterleiten
+    router.push('/');
+  } catch (error) {
+    console.error('Logout-Fehler:', error);
+  }
+};
+
 const scrollToPreview = () => {
   if (previewSection.value) {
-    previewSection.value.scrollIntoView({ 
+    previewSection.value.$el.scrollIntoView({ 
       behavior: 'smooth',
       block: 'start'
     });
   }
-};
-
-const setActiveDemo = (demo) => {
-  activeDemo.value = demo;
-};
-
-const toggleFaq = (index) => {
-  openFaq.value = openFaq.value === index ? null : index;
 };
 </script>
 
@@ -295,248 +560,23 @@ const toggleFaq = (index) => {
   width: 100%;
 }
 
-/* Hero Section */
+/* Section Backgrounds */
 .hero-section {
   min-height: 100vh;
+  background: rgba(0, 0, 0, 0.2);
+  backdrop-filter: blur(5px);
   display: flex;
   align-items: center;
-  justify-content: center;
-  text-align: center;
-  padding: 2rem;
-}
-
-.hero-content {
-  max-width: 900px;
-}
-
-.welcome-badge {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.5rem;
-  background: rgba(255, 185, 141, 0.2);
-  color: var(--q-accent);
-  padding: 0.5rem 1rem;
-  border-radius: 20px;
-  margin-bottom: 1rem;
-  font-size: 0.9rem;
-  font-weight: 600;
-}
-
-.main-title {
-  font-size: 3.5rem;
-  font-weight: 700;
-  color: #4DFFFA; /* Helles Cyan für besseren Kontrast */
-  margin: 0 0 1rem 0;
-  text-shadow: 0 0 20px rgba(77, 255, 250, 0.5), 2px 2px 4px rgba(0, 0, 0, 0.8);
-}
-
-.subtitle {
-  font-size: 1.3rem;
-  color: #8D6EFF; /* Leuchtendes Lila für besseren Kontrast */
-  margin: 0 0 3rem 0;
-  text-shadow: 0 0 15px rgba(141, 110, 255, 0.5), 1px 1px 2px rgba(0, 0, 0, 0.8);
-}
-
-.user-journey {
-  display: flex;
-  gap: 2rem;
-  margin-bottom: 2rem;
-  align-items: center;
-  flex-wrap: wrap;
-  justify-content: center;
-}
-
-.journey-option {
-  background: rgba(255, 255, 255, 0.05);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 16px;
-  padding: 2rem;
-  max-width: 300px;
-  transition: all 0.3s ease;
-}
-
-.journey-option:hover {
-  background: rgba(255, 255, 255, 0.08);
-  transform: translateY(-5px);
-}
-
-.new-user {
-  border-color: var(--q-accent);
-}
-
-.journey-header {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  margin-bottom: 1rem;
-}
-
-.journey-header h3 {
-  color: white;
-  margin: 0;
-  font-size: 1.1rem;
-}
-
-.journey-option p {
-  color: rgba(255, 255, 255, 0.8);
-  margin-bottom: 1.5rem;
-  font-size: 0.9rem;
-}
-
-.journey-btn {
-  width: 100%;
-  font-weight: 600;
-}
-
-.journey-divider {
-  color: rgba(255, 255, 255, 0.6);
-  font-weight: 600;
-  padding: 1rem;
 }
 
 .preview-section {
-  margin-top: 2rem;
-}
-
-.preview-btn {
-  text-decoration: underline;
-  font-size: 0.9rem;
-}
-
-/* Interactive Preview Section */
-.preview-section-content {
   min-height: 100vh;
-  background: rgba(0, 0, 0, 0.3);
+  background: rgba(0, 0, 0, 0.4);
   backdrop-filter: blur(10px);
   padding: 4rem 0;
-  display: flex;
-  align-items: center;
 }
 
-.preview-container {
-  max-width: 1000px;
-  margin: 0 auto;
-  padding: 0 2rem;
-}
-
-.preview-title {
-  font-size: 2.5rem;
-  font-weight: 600;
-  color: white;
-  text-align: center;
-  margin-bottom: 3rem;
-}
-
-.demo-cards {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-  gap: 2rem;
-}
-
-.demo-card {
-  background: rgba(255, 255, 255, 0.05);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 16px;
-  padding: 2rem;
-  text-align: center;
-  cursor: pointer;
-  transition: all 0.3s ease;
-}
-
-.demo-card:hover,
-.demo-card.active {
-  background: rgba(255, 255, 255, 0.1);
-  border-color: var(--q-accent);
-  transform: translateY(-5px);
-}
-
-.demo-header {
-  margin-bottom: 1.5rem;
-}
-
-.demo-header h3 {
-  color: white;
-  margin: 0.5rem 0 0 0;
-  font-size: 1.25rem;
-}
-
-.demo-preview {
-  margin: 1.5rem 0;
-  padding: 1rem;
-  background: rgba(0, 0, 0, 0.3);
-  border-radius: 8px;
-}
-
-.mock-profile {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 1rem;
-}
-
-.mock-avatar {
-  width: 40px;
-  height: 40px;
-  background: var(--q-accent);
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: #1B1B2F;
-}
-
-.mock-info {
-  text-align: left;
-}
-
-.mock-name {
-  color: white;
-  font-weight: 600;
-}
-
-.mock-date {
-  color: rgba(255, 255, 255, 0.7);
-  font-size: 0.8rem;
-}
-
-.mock-modules {
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
-}
-
-.mock-module {
-  padding: 0.5rem;
-  border-radius: 4px;
-  font-size: 0.9rem;
-}
-
-.mock-module.completed {
-  background: rgba(76, 175, 80, 0.3);
-  color: var(--q-positive);
-}
-
-.mock-module.active {
-  background: rgba(77, 255, 250, 0.3);
-  color: #4DFFFA;
-}
-
-.mock-forum {
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
-}
-
-.mock-post {
-  padding: 0.5rem;
-  background: rgba(255, 255, 255, 0.1);
-  border-radius: 4px;
-  font-size: 0.9rem;
-  color: rgba(255, 255, 255, 0.8);
-}
-
-/* Features Section */
-.features-section {
+.steps-section {
   min-height: 100vh;
   background: rgba(255, 185, 141, 0.05);
   backdrop-filter: blur(10px);
@@ -545,202 +585,78 @@ const toggleFaq = (index) => {
   align-items: center;
 }
 
-.features-container {
-  max-width: 800px;
-  margin: 0 auto;
-  padding: 0 2rem;
-  text-align: center;
+.faq-section {
+  min-height: 80vh;
+  background: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(10px);
+  padding: 4rem 0;
 }
 
-.features-title {
-  font-size: 2.5rem;
-  font-weight: 600;
-  color: white;
-  margin-bottom: 3rem;
-}
-
-.steps-visual {
-  display: flex;
-  flex-direction: column;
-  gap: 3rem;
-  margin-bottom: 4rem;
-}
-
-.step-visual {
-  position: relative;
+/* Custom Card Styles */
+.welcome-card {
+  background: rgba(255, 185, 141, 0.15) !important;
+  border: 2px solid rgba(255, 185, 141, 0.3);
   max-width: 500px;
   margin: 0 auto;
 }
 
-.step-circle {
-  width: 80px;
-  height: 80px;
-  background: rgba(255, 255, 255, 0.1);
-  border: 2px solid rgba(255, 255, 255, 0.2);
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  margin: 0 auto 1rem auto;
+.logged-in-section {
+  animation: fadeInUp 0.6s ease-out;
+}
+
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.journey-card {
+  background: rgba(255, 255, 255, 0.1) !important;
+  border: 1px solid rgba(255, 255, 255, 0.2);
   transition: all 0.3s ease;
 }
 
-.step-visual:hover .step-circle {
-  background: rgba(255, 185, 141, 0.2);
-  border-color: var(--q-accent);
-  transform: scale(1.1);
+.journey-card:hover {
+  background: rgba(255, 255, 255, 0.15) !important;
+  transform: translateY(-5px);
 }
 
-.step-visual h3 {
-  color: white;
-  font-size: 1.5rem;
-  margin: 0 0 1rem 0;
-}
-
-.step-visual p {
-  color: rgba(255, 255, 255, 0.8);
-  line-height: 1.6;
-  margin: 0;
-}
-
-.step-connector {
-  margin: 1rem auto;
-  opacity: 0.5;
-}
-
-.steps-cta {
-  text-align: center;
-}
-
-.main-cta {
-  font-size: 1.2rem;
-  padding: 1.2rem 3rem;
-  margin-bottom: 1.5rem;
-  box-shadow: 0 8px 25px rgba(255, 185, 141, 0.3);
+.demo-card {
+  background: rgba(255, 255, 255, 0.08) !important;
+  border: 1px solid rgba(255, 255, 255, 0.1);
   transition: all 0.3s ease;
+  height: 100%;
 }
 
-.main-cta:hover {
+.demo-card:hover {
+  background: rgba(255, 255, 255, 0.12) !important;
+  border-color: rgba(255, 185, 141, 0.5);
   transform: translateY(-3px);
-  box-shadow: 0 12px 35px rgba(255, 185, 141, 0.4);
-}
-
-.cta-benefits {
-  display: flex;
-  justify-content: center;
-  gap: 2rem;
-  flex-wrap: wrap;
-}
-
-.benefit-item {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  color: rgba(255, 255, 255, 0.8);
-  font-size: 0.9rem;
-}
-
-/* Trust Section */
-.trust-section {
-  min-height: 80vh;
-  background: rgba(0, 0, 0, 0.4);
-  backdrop-filter: blur(10px);
-  padding: 4rem 0;
-  display: flex;
-  align-items: center;
-}
-
-.trust-container {
-  max-width: 700px;
-  margin: 0 auto;
-  padding: 0 2rem;
-}
-
-.trust-container h2 {
-  font-size: 2.5rem;
-  font-weight: 600;
-  color: white;
-  text-align: center;
-  margin-bottom: 3rem;
-}
-
-.faq-list {
-  display: flex;
-  flex-direction: column;
-  gap: 1rem;
 }
 
 .faq-item {
   background: rgba(255, 255, 255, 0.05);
   border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 12px;
-  overflow: hidden;
-  cursor: pointer;
-  transition: all 0.3s ease;
+  border-radius: 8px;
 }
 
-.faq-item:hover {
-  background: rgba(255, 255, 255, 0.08);
-  border-color: var(--q-accent);
+/* Timeline customization */
+.q-timeline__subtitle {
+  color: rgba(255, 255, 255, 0.8) !important;
 }
 
-.faq-question {
-  padding: 1.5rem;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  color: white;
-  font-weight: 600;
-}
-
-.faq-answer {
-  padding: 0 1.5rem 1.5rem 1.5rem;
-  color: rgba(255, 255, 255, 0.8);
-  line-height: 1.6;
-}
-
-/* Responsive Design */
+/* Responsive adjustments */
 @media (max-width: 768px) {
-  .main-title {
-    font-size: 2.5rem;
-  }
-  
-  .user-journey {
-    flex-direction: column;
-  }
-  
-  .journey-divider {
-    transform: rotate(90deg);
-  }
-  
-  .demo-cards {
-    grid-template-columns: 1fr;
-  }
-  
-  .cta-benefits {
-    flex-direction: column;
-  }
-  
-  .steps-visual {
-    gap: 2rem;
-  }
-}
-
-@media (max-width: 480px) {
   .hero-section,
-  .preview-section-content,
-  .features-section,
-  .trust-section {
+  .preview-section,
+  .steps-section,
+  .faq-section {
     padding: 2rem 1rem;
-  }
-  
-  .journey-option {
-    padding: 1.5rem;
-  }
-  
-  .main-cta {
-    width: 100%;
-    padding: 1rem 2rem;
   }
 }
 </style>
