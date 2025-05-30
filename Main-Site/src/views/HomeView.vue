@@ -13,7 +13,7 @@
         <div class="row justify-center">
           <div class="col-12 col-md-8 text-center">
             <div class="q-pa-xl">
-              <h1 class="text-h2 text-accent  q-mb-md">Black Gateway</h1>
+              <h1 class="text-h2 text-accent q-mb-md">Black Gateway</h1>
               <p class="text-h5 text-white q-mb-xl">
                 Deine personalisierte Lernplattform mit NASA-Integration
               </p>
@@ -82,43 +82,22 @@
                     
                     <div class="row q-gutter-md justify-center q-mt-lg">
                       <q-btn
-                        color="info"
-                        text-color="primary"
+                        color="accent"
+                        text-color="dark"
                         label="Weiter lernen"
                         size="lg"
-                      
-                        unelevated
+                        rounded
                         @click="goToLearning"
                       />
-
+                      
                       <q-btn
-                        color="info"
-                        text-color="primary"
-                        label="Dashboard"
+                        outline
+                        color="white"
+                        label="Zu dem Forum"
                         size="lg"
-                        
-                        unelevated
-                        @click="router.push('/dashboard')"
-                      />
-                      <q-btn
-                        color="info"
-                        text-color="primary"
-                        label="Forum"
-                        size="lg"
-                       
-                        unelevated
+                        rounded
                         @click="router.push('/forum')"
                       />
-                        <q-btn
-                        color="info"
-                        text-color="primary"
-                        label="Ai Assistent"
-                        size="lg"
-                       
-                        unelevated
-                        @click="router.push('/deepseek')"
-                      />
-                      
                     </div>
                     
                     <!-- NASA APOD Details Expandable -->
@@ -156,7 +135,6 @@
                     @click="handleLogout"
                   />
                 </div>
-                
               </div>
               
               <!-- Nicht eingeloggte Benutzer - Standard Journey Cards -->
@@ -245,11 +223,27 @@
                   <q-card-section class="q-pt-none">
                     <q-item dark class="q-pa-none">
                       <q-item-section avatar>
-                        <q-avatar color="accent" text-color="dark" icon="mdi-telescope" />
+                        <q-avatar 
+                          v-if="isLoggedIn && userApodImage" 
+                          size="40px"
+                        >
+                          <img :src="userApodImage" alt="User NASA APOD" class="apod-image" />
+                        </q-avatar>
+                        <q-avatar 
+                          v-else 
+                          color="accent" 
+                          text-color="dark" 
+                          icon="mdi-telescope" 
+                          size="40px"
+                        />
                       </q-item-section>
                       <q-item-section>
-                        <q-item-label class="text-white">Dein Username</q-item-label>
-                        <q-item-label caption>NASA-Bild vom Registrierungstag</q-item-label>
+                        <q-item-label class="text-white">
+                          {{ isLoggedIn ? currentUser?.username || 'Dein Username' : 'Dein Username' }}
+                        </q-item-label>
+                        <q-item-label caption>
+                          {{ isLoggedIn && userApodInfo ? userApodInfo.title : 'NASA-Bild vom Registrierungstag' }}
+                        </q-item-label>
                       </q-item-section>
                     </q-item>
                     
@@ -380,12 +374,13 @@
               
               <q-btn
                 v-else
-                color="info"
-                text-color="primary"
+                color="accent"
+                text-color="dark"
                 label="Zu den Lernmodulen"
                 size="xl"
                 rounded
                 unelevated
+                icon="mdi-book-open-page-variant"
                 @click="goToLearning"
                 class="q-px-xl"
               />
@@ -621,12 +616,116 @@ const scrollToPreview = () => {
 .welcome-card {
   background: rgba(255, 185, 141, 0.15) !important;
   border: 2px solid rgba(255, 185, 141, 0.3);
-  max-width: 500px;
+  max-width: 600px;
   margin: 0 auto;
 }
 
 .logged-in-section {
   animation: fadeInUp 0.6s ease-out;
+}
+
+/* NASA Avatar Styles */
+.nasa-avatar-container {
+  position: relative;
+  display: inline-block;
+}
+
+.nasa-avatar {
+  border: 3px solid rgba(255, 185, 141, 0.5);
+  transition: all 0.3s ease;
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.nasa-avatar:hover {
+  border-color: rgba(255, 185, 141, 0.8);
+  transform: scale(1.05);
+}
+
+.loading-avatar {
+  background: rgba(255, 185, 141, 0.2) !important;
+}
+
+.apod-image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: inherit;
+}
+
+.nasa-badge {
+  position: absolute;
+  bottom: -8px;
+  right: -8px;
+  font-size: 0.7rem;
+  font-weight: 600;
+}
+
+.nasa-info {
+  max-width: 400px;
+  margin: 0 auto;
+}
+
+.nasa-details {
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 8px;
+  margin-top: 1rem;
+}
+
+/* Navigation Buttons - Haupt Navigation */
+.main-navigation {
+  max-width: 600px;
+  margin: 0 auto;
+}
+
+.uniform-btn {
+  min-width: 140px;
+  min-height: 50px;
+  font-weight: 600;
+  transition: all 0.3s ease;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+  text-transform: none;
+  white-space: normal;
+  padding: 12px 16px;
+}
+
+.uniform-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+.uniform-btn .q-btn__content {
+  flex-direction: row;
+  gap: 8px;
+  justify-content: center;
+  align-items: center;
+}
+
+.uniform-btn .q-icon {
+  font-size: 20px;
+}
+
+/* Quick Access Navigation */
+.quick-access-section {
+  max-width: 300px;
+  margin: 0 auto;
+}
+
+.quick-access-card {
+  background: rgba(255, 255, 255, 0.05) !important;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 12px;
+  backdrop-filter: blur(5px);
+}
+
+.quick-btn {
+  width: 100%;
+  aspect-ratio: 1;
+  transition: all 0.2s ease;
+}
+
+.quick-btn:hover {
+  transform: scale(1.1);
+  background: rgba(255, 255, 255, 0.1) !important;
 }
 
 @keyframes fadeInUp {
@@ -682,6 +781,55 @@ const scrollToPreview = () => {
   .steps-section,
   .faq-section {
     padding: 2rem 1rem;
+  }
+  
+  .main-navigation {
+    max-width: 95%;
+  }
+  
+  .uniform-btn {
+    min-width: 120px;
+    min-height: 45px;
+    font-size: 0.9rem;
+    padding: 10px 12px;
+  }
+  
+  .uniform-btn .q-icon {
+    font-size: 18px;
+  }
+  
+  .quick-access-section {
+    max-width: 250px;
+  }
+}
+
+@media (max-width: 480px) {
+  .welcome-card {
+    max-width: 95%;
+    margin: 0 auto;
+  }
+  
+  .main-navigation {
+    padding: 0 0.5rem;
+  }
+  
+  .uniform-btn {
+    min-width: 100px;
+    min-height: 42px;
+    font-size: 0.85rem;
+    padding: 8px 10px;
+  }
+  
+  .uniform-btn .q-icon {
+    font-size: 16px;
+  }
+  
+  .quick-access-section {
+    max-width: 220px;
+  }
+  
+  .quick-btn {
+    font-size: 0.8rem;
   }
 }
 </style>
