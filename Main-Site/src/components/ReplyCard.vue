@@ -10,7 +10,7 @@
           <span class="author-name">{{ reply.author_name }}</span>
           <span class="reply-date">{{ formatDate(reply.created_at) }}</span>
           <span v-if="reply.updated_at !== reply.created_at" class="edited-badge">
-            (edited)
+            (edited {{ formatRelativeDate(reply.updated_at) }})
           </span>
         </div>
       </div>
@@ -26,26 +26,26 @@
         >
           <q-menu v-model="showMenu" anchor="bottom right" self="top right">
             <q-list>
-              <q-item clickable @click="$emit('edit', reply)">
+              <q-item clickable @click="editReply" v-close-popup>
                 <q-item-section avatar>
                   <q-icon name="edit" />
                 </q-item-section>
                 <q-item-section>Edit</q-item-section>
               </q-item>
-              <q-item clickable @click="$emit('delete', reply)">
+              <q-item clickable @click="deleteReply" v-close-popup>
                 <q-item-section avatar>
                   <q-icon name="delete" color="negative" />
                 </q-item-section>
                 <q-item-section>Delete</q-item-section>
               </q-item>
               <q-separator />
-              <q-item clickable @click="replyToReply">
+              <q-item clickable @click="replyToReply" v-close-popup>
                 <q-item-section avatar>
                   <q-icon name="reply" />
                 </q-item-section>
                 <q-item-section>Reply</q-item-section>
               </q-item>
-              <q-item clickable @click="reportReply">
+              <q-item clickable @click="reportReply" v-close-popup>
                 <q-item-section avatar>
                   <q-icon name="flag" />
                 </q-item-section>
@@ -78,6 +78,7 @@
           :alt="'Reply media'"
           class="reply-image"
           @click="showImageFullscreen"
+          @error="handleImageError"
         />
         <video 
           v-else-if="isVideo(reply.media_type)"
@@ -85,6 +86,7 @@
           class="reply-video"
           controls
           preload="metadata"
+          @error="handleVideoError"
         />
       </div>
     </div>
@@ -92,7 +94,7 @@
     <!-- Reply Footer -->
     <div class="reply-footer">
       <div class="reply-stats">
-        <span class="reply-time">{{ formatDate(reply.created_at) }}</span>
+        <span class="reply-time">{{ formatRelativeDate(reply.created_at) }}</span>
       </div>
       
       <div class="reply-interactions">
@@ -134,6 +136,8 @@
             maxlength="2000"
             counter
             class="nested-reply-input"
+            ref="nestedReplyInput"
+            :rules="[val => !!val || 'Reply is required', val => val.length >= 5 || 'Reply must be at least 5 characters']"
           />
           <div class="nested-reply-actions">
             <q-btn
@@ -173,6 +177,9 @@ const props = defineProps({
 
 const emit = defineEmits(['edit', 'delete', 'like', 'reply'])
 
+// Refs
+const nestedReplyInput = ref(null)
+
 // Reactive Data
 const showMenu = ref(false)
 const isLiked = ref(false) // You could track this in localStorage or user state
@@ -182,6 +189,11 @@ const isSubmitting = ref(false)
 
 // Methods
 const formatDate = (dateString) => {
+  if (!dateString) return ''
+  return new Date(dateString).toLocaleDateString()
+}
+
+const formatRelativeDate = (dateString) => {
   if (!dateString) return ''
   
   const date = new Date(dateString)
@@ -240,6 +252,25 @@ const isVideo = (mediaType) => {
   return mediaType && mediaType.startsWith('video/')
 }
 
+const handleImageError = (event) => {
+  console.warn('Failed to load reply image:', event.target.src)
+  event.target.style.display = 'none'
+  
+  // Show a simple error placeholder
+  const errorDiv = document.createElement('div')
+  errorDiv.className = 'media-error'
+  errorDiv.innerHTML = '<div style="display: flex; align-items: center; justify-content: center; padding: 1rem; color: #64748b; background: #f8fafc; border: 1px dashed #cbd5e1; border-radius: 0.5rem; font-size: 0.875rem;"><span>Failed to load image</span></div>'
+  
+  if (event.target.parentNode) {
+    event.target.parentNode.insertBefore(errorDiv, event.target)
+  }
+}
+
+const handleVideoError = (event) => {
+  console.warn('Failed to load reply video:', event.target.src)
+  handleImageError(event) // Reuse the same error handling
+}
+
 const toggleLike = () => {
   isLiked.value = !isLiked.value
   emit('like', {
@@ -248,8 +279,29 @@ const toggleLike = () => {
   })
 }
 
+const editReply = () => {
+  console.log('Edit reply clicked:', props.reply.id)
+  emit('edit', props.reply)
+}
+
+const deleteReply = () => {
+  console.log('Delete reply clicked:', props.reply.id)
+  emit('delete', props.reply)
+}
+
 const replyToReply = () => {
   showReplyForm.value = true
+  nestedReplyContent.value = `@${props.reply.author_name} `
+  
+  // Focus on the input after it's rendered
+  setTimeout(() => {
+    const input = nestedReplyInput.value?.$el.querySelector('textarea')
+    if (input) {
+      input.focus()
+      // Set cursor to end
+      input.setSelectionRange(input.value.length, input.value.length)
+    }
+  }, 100)
 }
 
 const cancelNestedReply = () => {
@@ -259,6 +311,14 @@ const cancelNestedReply = () => {
 
 const submitNestedReply = async () => {
   if (!nestedReplyContent.value.trim()) return
+  
+  // Validate the input
+  if (nestedReplyInput.value) {
+    nestedReplyInput.value.validate()
+    if (nestedReplyInput.value.hasError) {
+      return
+    }
+  }
   
   isSubmitting.value = true
   
@@ -278,6 +338,7 @@ const submitNestedReply = async () => {
       position: 'top'
     })
   } catch (error) {
+    console.error('Error submitting nested reply:', error)
     $q.notify({
       type: 'negative',
       message: 'Failed to post reply. Please try again.',
@@ -504,6 +565,9 @@ const reportReply = () => {
   margin-top: 1rem;
   padding-top: 1rem;
   border-top: 1px solid #e2e8f0;
+  background: white;
+  border-radius: 0.5rem;
+  padding: 1rem;
 }
 
 .reply-form-row {
@@ -581,6 +645,10 @@ const reportReply = () => {
   
   .cancel-btn, .submit-btn {
     flex: 1;
+  }
+  
+  .nested-reply-form {
+    padding: 0.75rem;
   }
 }
 </style>

@@ -52,7 +52,7 @@
         <q-route-tab to="/dashboard" label="Dashboard" exact />
         <q-route-tab to="/kurse" label="Kurse" exact />
         <q-route-tab to="/forum" label="Forum" exact />
-        <q-route-tab to="/deepseek" label="AI Assistant" exact />
+        <q-route-tab to="/ai-assistant" label="AI Assistant" exact />
       </q-tabs>
     </q-header>
 
@@ -98,7 +98,7 @@
           <q-item-section>Forum</q-item-section>
         </q-item>
 
-        <q-item clickable v-ripple to="/deepseek" exact class="text-info" active-class="bg-primary text-accent">
+        <q-item clickable v-ripple to="/ai-assistant" exact class="text-info" active-class="bg-primary text-accent">
   <q-item-section avatar>
     <q-icon name="smart_toy" />
   </q-item-section>

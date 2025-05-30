@@ -15,7 +15,7 @@ import testRoute from './api/routes/test.js';
 import usersRoute from './api/routes/users.js';
 import kurseRoute from './api/routes/kurse.js';
 import forumRoute from './api/routes/forum.js';
-import deepseekRoute from './api/deepseek.js';
+import aiAssistantRoute from './api/routes/ai-assistant.js'; // 🆕 NEW: AI Assistant route
 
 // Ensure uploads directory exists
 const uploadsDir = path.join(process.cwd(), 'uploads');
@@ -36,7 +36,6 @@ const storage = multer.diskStorage({
 });
 
 // Create multer instance
-// eslint-disable-next-line no-trailing-spaces
 const upload = multer({ 
   storage,
   limits: {
@@ -51,10 +50,6 @@ const upload = multer({
     }
   }
 });
-
-// Importiere deine Routen
-
-// eslint-disable-next-line no-multiple-empty-lines
 
 // 🔹 .env Datei laden
 dotenv.config();
@@ -98,7 +93,6 @@ const uploadsPath = path.join(__dirname, 'public', 'uploads');
 console.log('Serving uploads from:', uploadsPath);
 
 // Create uploads directory if it doesn't exist
-
 try {
   if (!fs.existsSync(uploadsPath)) {
     fs.mkdirSync(uploadsPath, { recursive: true });
@@ -126,10 +120,9 @@ app.use('/users', usersRoute);
 app.use('/info', kurseRoute);
 app.use('/forum', forumRoute);
 app.use('/uploads', express.static('public/uploads'));
-app.use('/deepseek', deepseekRoute);
+app.use('/ai-assistant', aiAssistantRoute); // 🆕 NEW: AI Assistant API routes
 
 // 🔹 Error handler for file uploads
-// eslint-disable-next-line no-unused-vars, consistent-return
 app.use((err, req, res, next) => {
   if (err.code === 'LIMIT_FILE_SIZE') {
     return res.status(413).json({ message: 'File too large' });

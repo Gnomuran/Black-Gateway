@@ -1,5 +1,5 @@
 import { createApp } from 'vue';
-import { Quasar, Notify } from 'quasar';
+import { Quasar, Notify, Dialog } from 'quasar'; // Add Dialog here
 import quasarIconSet from 'quasar/icon-set/svg-fontawesome-v6';
 import { createPinia } from 'pinia'; // Pinia importieren
 
@@ -9,8 +9,6 @@ import '@quasar/extras/fontawesome-v6/fontawesome-v6.css';
 
 // Import Quasar css
 import 'quasar/src/css/index.sass';
-
-
 
 import App from './App.vue';
 import router from './router';
@@ -23,9 +21,8 @@ app.use(pinia); // Pinia zur App hinzufügen
 
 // Quasar konfigurieren
 app.use(Quasar, {
-  plugins: {  Notify }, // Quasar-Plugins hier hinzufügen
+  plugins: { Notify, Dialog }, // Add Dialog here
   iconSet: quasarIconSet,
-
 });
 
 // Router zur App hinzufügen

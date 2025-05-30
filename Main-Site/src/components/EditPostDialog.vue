@@ -36,37 +36,22 @@
               <span>Editing: "{{ post.title }}"</span>
             </div>
             <div class="info-details">
-              <span>Created by {{ post.author_name }} {{ formatDate(post.created_at) }}</span>
+              <span>Created by {{ post.author_name }} on {{ formatDate(post.created_at) }}</span>
             </div>
           </div>
 
-          <!-- Topic Selection -->
+          <!-- Topic Selection (Read-only) -->
           <div class="form-group">
             <label class="form-label">Topic</label>
-            <q-select
-              v-model="form.topic_id"
-              :options="topicOptions"
-              option-value="value"
-              option-label="label"
-              outlined
-              readonly
-              class="topic-select"
-            >
-              <template v-slot:option="scope">
-                <q-item v-bind="scope.itemProps">
-                  <q-item-section avatar>
-                    <div class="topic-option-icon" :style="{ backgroundColor: scope.opt.color }">
-                      <q-icon :name="scope.opt.icon" color="white" />
-                    </div>
-                  </q-item-section>
-                  <q-item-section>
-                    <q-item-label>{{ scope.opt.label }}</q-item-label>
-                    <q-item-label caption>{{ scope.opt.description }}</q-item-label>
-                  </q-item-section>
-                </q-item>
-              </template>
-            </q-select>
-            <p class="field-hint">Topic cannot be changed when editing</p>
+            <div class="topic-display">
+              <div class="topic-display-icon" :style="{ backgroundColor: getCurrentTopic()?.color || '#6366f1' }">
+                <q-icon :name="getCurrentTopic()?.icon || 'forum'" color="white" />
+              </div>
+              <div class="topic-display-info">
+                <span class="topic-name">{{ getCurrentTopic()?.title || 'Unknown Topic' }}</span>
+                <span class="topic-note">Topic cannot be changed when editing</span>
+              </div>
+            </div>
           </div>
 
           <!-- Title -->
@@ -78,11 +63,8 @@
               placeholder="Enter an engaging title for your discussion"
               maxlength="500"
               counter
-              :rules="[
-                val => !!val || 'Title is required',
-                val => val.length >= 10 || 'Title must be at least 10 characters',
-                val => val.length <= 500 || 'Title cannot exceed 500 characters'
-              ]"
+              :rules="titleRules"
+              ref="titleInput"
               class="title-input"
             />
           </div>
@@ -203,10 +185,8 @@
               rows="8"
               maxlength="10000"
               counter
-              :rules="[
-                val => !!val || 'Content is required',
-                val => val.length >= 20 || 'Content must be at least 20 characters'
-              ]"
+              :rules="contentRules"
+              ref="contentInput"
               class="content-textarea"
             />
             
@@ -222,7 +202,7 @@
             </div>
           </div>
 
-          <!-- Change Summary -->
+          <!-- Edit Summary -->
           <div class="form-group">
             <label class="form-label">Edit Summary (Optional)</label>
             <q-input
@@ -235,6 +215,12 @@
             />
             <p class="field-hint">This helps other users understand what was modified</p>
           </div>
+        </div>
+        
+        <!-- Loading State -->
+        <div v-else class="loading-state">
+          <q-spinner-dots size="3rem" color="primary" />
+          <p>Loading post data...</p>
         </div>
       </q-card-section>
 
@@ -265,8 +251,7 @@
 </template>
 
 <script setup>
-// eslint-disable-next-line no-unused-vars
-import { ref, computed, watch, onMounted } from 'vue'
+import { ref, computed, watch, nextTick } from 'vue'
 import { useForumStore } from '../stores/forum'
 import { useQuasar } from 'quasar'
 
@@ -282,6 +267,10 @@ const props = defineProps({
 
 const emit = defineEmits(['update:modelValue', 'post-updated'])
 
+// Refs
+const titleInput = ref(null)
+const contentInput = ref(null)
+
 // Reactive Data
 const form = ref({
   topic_id: null,
@@ -295,21 +284,29 @@ const form = ref({
 
 const originalForm = ref({})
 
+// Validation Rules
+const titleRules = [
+  val => !!val || 'Title is required',
+  val => val.length >= 10 || 'Title must be at least 10 characters',
+  val => val.length <= 500 || 'Title cannot exceed 500 characters'
+]
+
+const contentRules = [
+  val => !!val || 'Content is required',
+  val => val.length >= 20 || 'Content must be at least 20 characters',
+  val => val.length <= 10000 || 'Content cannot exceed 10000 characters'
+]
+
 // Computed
 const dialogVisible = computed({
   get: () => props.modelValue,
   set: (value) => emit('update:modelValue', value)
 })
 
-const topicOptions = computed(() => {
-  return props.topics?.map(topic => ({
-    label: topic.title,
-    value: topic.id,
-    description: topic.description,
-    icon: topic.icon,
-    color: topic.color
-  })) || []
-})
+const getCurrentTopic = () => {
+  if (!form.value.topic_id) return null
+  return props.topics?.find(topic => topic.id === form.value.topic_id) || null
+}
 
 const hasCurrentMedia = computed(() => {
   return form.value.media_url && (form.value.post_type === 'image' || form.value.post_type === 'video' || form.value.post_type === 'gif')
@@ -325,8 +322,8 @@ const newMediaPreview = computed(() => {
 })
 
 const isFormValid = computed(() => {
-  const hasTitle = form.value.title && form.value.title.length >= 10
-  const hasContent = form.value.content && form.value.content.length >= 20
+  const hasTitle = form.value.title && form.value.title.length >= 10 && form.value.title.length <= 500
+  const hasContent = form.value.content && form.value.content.length >= 20 && form.value.content.length <= 10000
   const hasTopic = form.value.topic_id
   
   return hasTitle && hasContent && hasTopic
@@ -347,20 +344,22 @@ const initializeForm = () => {
   
   form.value = {
     topic_id: props.post.topic_id,
-    title: props.post.title,
-    content: props.post.content,
-    post_type: props.post.post_type,
-    media_url: props.post.media_url,
+    title: props.post.title || '',
+    content: props.post.content || '',
+    post_type: props.post.post_type || 'text',
+    media_url: props.post.media_url || null,
     newMediaFile: null,
     editSummary: ''
   }
   
   // Store original values for comparison
   originalForm.value = {
-    title: props.post.title,
-    content: props.post.content,
-    media_url: props.post.media_url
+    title: props.post.title || '',
+    content: props.post.content || '',
+    media_url: props.post.media_url || null
   }
+  
+  console.log('Form initialized:', form.value)
 }
 
 const closeDialog = () => {
@@ -393,6 +392,11 @@ const resetForm = () => {
     editSummary: ''
   }
   originalForm.value = {}
+  
+  // Clear file preview URLs
+  if (newMediaPreview.value) {
+    URL.revokeObjectURL(newMediaPreview.value)
+  }
 }
 
 const formatDate = (dateString) => {
@@ -452,29 +456,40 @@ const removeCurrentMedia = () => {
 }
 
 const removeNewMedia = () => {
-  form.value.newMediaFile = null
   if (newMediaPreview.value) {
     URL.revokeObjectURL(newMediaPreview.value)
   }
+  form.value.newMediaFile = null
 }
 
 const onMediaRejected = (rejectedEntries) => {
   $q.notify({
     type: 'negative',
-    message: `File rejected: ${rejectedEntries[0].failedPropValidation}`
+    message: `File rejected: ${rejectedEntries[0].failedPropValidation}`,
+    position: 'top'
   })
 }
 
 const formatText = (before, after) => {
-  const textarea = document.querySelector('.content-textarea textarea')
-  if (textarea) {
-    const start = textarea.selectionStart
-    const end = textarea.selectionEnd
-    const text = form.value.content
-    const selectedText = text.substring(start, end) || 'text'
-    
-    form.value.content = text.substring(0, start) + before + selectedText + after + text.substring(end)
-  }
+  nextTick(() => {
+    const textarea = contentInput.value?.$el.querySelector('textarea')
+    if (textarea) {
+      const start = textarea.selectionStart
+      const end = textarea.selectionEnd
+      const text = form.value.content
+      const selectedText = text.substring(start, end) || 'text'
+      
+      const newContent = text.substring(0, start) + before + selectedText + after + text.substring(end)
+      form.value.content = newContent
+      
+      // Reset cursor position
+      nextTick(() => {
+        const newPosition = start + before.length + selectedText.length + after.length
+        textarea.focus()
+        textarea.setSelectionRange(newPosition, newPosition)
+      })
+    }
+  })
 }
 
 const insertLink = () => {
@@ -487,48 +502,116 @@ const insertLink = () => {
 }
 
 const saveChanges = async () => {
-  if (!isFormValid.value || !hasChanges.value || !props.post) return
+  console.log('Saving changes...')
+  
+  if (!isFormValid.value || !hasChanges.value || !props.post) {
+    console.log('Form validation failed:', {
+      isFormValid: isFormValid.value,
+      hasChanges: hasChanges.value,
+      hasPost: !!props.post
+    })
+    return
+  }
+  
+  // Validate form inputs manually
+  if (titleInput.value) {
+    titleInput.value.validate()
+    if (titleInput.value.hasError) {
+      $q.notify({
+        type: 'negative',
+        message: 'Please fix the title errors',
+        position: 'top'
+      })
+      return
+    }
+  }
+  
+  if (contentInput.value) {
+    contentInput.value.validate()
+    if (contentInput.value.hasError) {
+      $q.notify({
+        type: 'negative',
+        message: 'Please fix the content errors',
+        position: 'top'
+      })
+      return
+    }
+  }
   
   const updateData = {
-    title: form.value.title,
-    content: form.value.content,
-    post_type: form.value.post_type
+    title: form.value.title.trim(),
+    content: form.value.content.trim(),
+    post_type: form.value.post_type,
+    edit_summary: form.value.editSummary?.trim() || null
   }
+  
+  console.log('Update data:', updateData)
   
   // Handle media changes
   if (form.value.newMediaFile) {
     updateData.media = form.value.newMediaFile
+    console.log('Adding new media file:', form.value.newMediaFile.name)
   } else if (form.value.media_url !== originalForm.value.media_url) {
     // Media was removed
     updateData.media_url = form.value.media_url
+    console.log('Media URL changed:', form.value.media_url)
   }
   
-  const result = await forumStore.updatePost(props.post.id, updateData)
-  
-  if (result) {
-    emit('post-updated', result)
+  try {
+    const result = await forumStore.updatePost(props.post.id, updateData)
     
+    if (result) {
+      console.log('Post updated successfully:', result)
+      emit('post-updated', result)
+      
+      $q.notify({
+        type: 'positive',
+        message: 'Discussion updated successfully!',
+        position: 'top'
+      })
+      
+      resetForm()
+      dialogVisible.value = false
+    } else {
+      throw new Error('Update failed - no result returned')
+    }
+  } catch (error) {
+    console.error('Error updating post:', error)
     $q.notify({
-      type: 'positive',
-      message: 'Discussion updated successfully!',
+      type: 'negative',
+      message: error.message || 'Failed to update discussion. Please try again.',
       position: 'top'
     })
-    
-    dialogVisible.value = false
   }
 }
 
 // Watchers
 watch(() => props.post, (newPost) => {
+  console.log('Post prop changed:', newPost)
   if (newPost) {
     initializeForm()
   }
 }, { immediate: true })
 
 watch(dialogVisible, (isVisible) => {
+  console.log('Dialog visibility changed:', isVisible)
   if (isVisible && props.post) {
     initializeForm()
+  } else if (!isVisible) {
+    // Clean up when dialog closes
+    if (newMediaPreview.value) {
+      URL.revokeObjectURL(newMediaPreview.value)
+    }
   }
+})
+
+// Debug watchers
+watch(() => form.value.title, (newTitle) => {
+  console.log('Title changed:', newTitle)
+})
+
+watch(() => form.value.content, (newContent) => {
+  console.log('Content changed, length:', newContent?.length)
 })
 </script>
 
@@ -586,6 +669,20 @@ watch(dialogVisible, (isVisible) => {
   margin: 0 auto;
 }
 
+.loading-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 4rem 2rem;
+  text-align: center;
+}
+
+.loading-state p {
+  margin-top: 1rem;
+  color: #64748b;
+}
+
 .current-post-info {
   background: #f0f9ff;
   border: 1px solid #bae6fd;
@@ -629,17 +726,41 @@ watch(dialogVisible, (isVisible) => {
   font-style: italic;
 }
 
-.topic-select {
+.topic-display {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 1rem;
   background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 0.5rem;
 }
 
-.topic-option-icon {
-  width: 2rem;
-  height: 2rem;
+.topic-display-icon {
+  width: 2.5rem;
+  height: 2.5rem;
   border-radius: 0.5rem;
   display: flex;
   align-items: center;
   justify-content: center;
+  flex-shrink: 0;
+}
+
+.topic-display-info {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.topic-name {
+  font-weight: 600;
+  color: #1e293b;
+}
+
+.topic-note {
+  font-size: 0.75rem;
+  color: #64748b;
+  font-style: italic;
 }
 
 .content-type-display {
@@ -758,6 +879,12 @@ watch(dialogVisible, (isVisible) => {
     flex-direction: column;
     align-items: flex-start;
     gap: 0.5rem;
+  }
+  
+  .topic-display {
+    flex-direction: column;
+    text-align: center;
+    gap: 0.75rem;
   }
 }
 </style>

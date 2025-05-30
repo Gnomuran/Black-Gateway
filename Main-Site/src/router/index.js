@@ -67,12 +67,15 @@ const routes = [
       transition: "fade", // Standard-Animation für geschützte Routen
     },
   },
+   // 🆕 NEW: AI Assistant Route
   {
-    path: "/deepseek",
-    name: "Deepseek",
-    component: () => import("../views/DeepseekView.vue"),
+    path: "/ai-assistant",
+    name: "AIAssistant",
+    component: () => import("../views/AIAssistantView.vue"),
     meta: {
+      // requiresAuth: true, // Optional: require login to use AI assistant
       transition: "fade",
+      title: "AI Physics Assistant"
     },
   },
 ];

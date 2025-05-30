@@ -46,6 +46,39 @@ const generateRandomUsername = () => {
   return `${adjective}${noun}${randomNum}`;
 };
 
+// Add middleware to check if user is authenticated
+const requireAuth = (req, res, next) => {
+  console.log('Session check:', req.session);
+  
+  if (!req.session.user) {
+    return res.status(401).json({ 
+      error: 'Authentication required',
+      message: 'You must be logged in to perform this action'
+    });
+  }
+  
+  // Add user info to request for easy access
+  req.currentUser = req.session.user;
+  next();
+};
+
+// Helper function to get user info (fallback to random username for testing)
+const getUserInfo = (req) => {
+  if (req.session && req.session.user) {
+    return {
+      id: req.session.user.id,
+      username: req.session.user.username
+    };
+  }
+  
+  // Fallback for testing when not authenticated
+  console.warn('No authenticated user found, using fallback');
+  return {
+    id: null,
+    username: generateRandomUsername()
+  };
+};
+
 // GET all topics
 router.get('/topics', async (req, res) => {
   try {
@@ -77,10 +110,10 @@ router.get('/topics/:topicId/posts', async (req, res) => {
     else if (sort === 'popular') orderBy = 'p.likes_count DESC, p.created_at DESC';
 
     const result = await pool.query(`
-            SELECT p.id, p.topic_id, p.title, p.content, p.author_name, p.post_type, 
+            SELECT p.id, p.topic_id, p.title, p.content, p.author_name, p.user_id, p.post_type, 
                    p.media_type, p.media_filename, p.likes_count, p.replies_count,
                    p.is_pinned, p.created_at, p.updated_at,
-                   COUNT(r.id) as replies_count,
+                   COUNT(r.id) as actual_replies_count,
                    t.title as topic_title
             FROM forum_posts p
             LEFT JOIN forum_replies r ON p.id = r.post_id
@@ -91,10 +124,13 @@ router.get('/topics/:topicId/posts', async (req, res) => {
             LIMIT $2 OFFSET $3
         `, [topicId, limit, offset]);
 
-    // Add media URLs for posts that have media
+    // Add media URLs and permission flags
+    const currentUserId = getUserInfo(req).id;
     const postsWithMedia = result.rows.map((post) => ({
       ...post,
       media_url: post.media_filename ? `/forum/media/${post.id}` : null,
+      can_edit: currentUserId && post.user_id === currentUserId,
+      can_delete: currentUserId && post.user_id === currentUserId,
     }));
 
     res.json(postsWithMedia);
@@ -111,7 +147,7 @@ router.get('/posts/:postId', async (req, res) => {
 
     // Get post details
     const postResult = await pool.query(`
-            SELECT p.id, p.topic_id, p.title, p.content, p.author_name, p.post_type,
+            SELECT p.id, p.topic_id, p.title, p.content, p.author_name, p.user_id, p.post_type,
                    p.media_type, p.media_filename, p.likes_count, p.replies_count,
                    p.is_pinned, p.created_at, p.updated_at,
                    t.title as topic_title, t.id as topic_id
@@ -131,9 +167,20 @@ router.get('/posts/:postId', async (req, res) => {
             ORDER BY created_at ASC
         `, [postId]);
 
+    const currentUserId = getUserInfo(req).id;
     const post = postResult.rows[0];
+    
+    // Add permission flags and media URL to post
     post.media_url = post.media_filename ? `/forum/media/${post.id}` : null;
-    post.replies = repliesResult.rows;
+    post.can_edit = currentUserId && post.user_id === currentUserId;
+    post.can_delete = currentUserId && post.user_id === currentUserId;
+    
+    // Add permission flags to replies
+    post.replies = repliesResult.rows.map(reply => ({
+      ...reply,
+      can_edit: currentUserId && reply.user_id === currentUserId,
+      can_delete: currentUserId && reply.user_id === currentUserId,
+    }));
 
     res.json(post);
   } catch (error) {
@@ -281,6 +328,7 @@ router.post('/posts', upload.single('media'), async (req, res) => {
   try {
     console.log('POST /posts received');
     console.log('Body:', req.body);
+    console.log('Session:', req.session);
     console.log('File:', req.file ? { name: req.file.originalname, size: req.file.size, type: req.file.mimetype } : 'No file');
 
     const { topic_id, title, content, post_type = 'text' } = req.body;
@@ -290,12 +338,7 @@ router.post('/posts', upload.single('media'), async (req, res) => {
 
     // Validate required fields
     if (!parsedTopicId || isNaN(parsedTopicId) || !title || !content) {
-      console.log('Missing or invalid required fields:', {
-        topic_id: parsedTopicId,
-        isValidTopicId: !isNaN(parsedTopicId),
-        title: !!title,
-        content: !!content,
-      });
+      console.log('Missing or invalid required fields');
       return res.status(400).json({
         error: 'Missing or invalid required fields',
         details: {
@@ -306,9 +349,12 @@ router.post('/posts', upload.single('media'), async (req, res) => {
       });
     }
 
-    const author_name = generateRandomUsername();
-    console.log('Generated author name:', author_name);
-    console.log('Parsed topic_id:', parsedTopicId, 'type:', typeof parsedTopicId);
+    // Get user info (authenticated or fallback)
+    const userInfo = getUserInfo(req);
+    const author_name = userInfo.username;
+    const user_id = userInfo.id;
+
+    console.log('User info:', userInfo);
 
     let media_data = null;
     let media_type = null;
@@ -324,49 +370,31 @@ router.post('/posts', upload.single('media'), async (req, res) => {
         type: media_type,
         size: req.file.size,
         bufferLength: req.file.buffer.length,
-        isGif: media_type === 'image/gif',
-        post_type,
       });
-
-      // Validate GIF files specifically
-      if (post_type === 'gif' && media_type !== 'image/gif') {
-        console.log('Warning: post_type is gif but media_type is not image/gif:', media_type);
-      }
-
-      // Ensure we have valid media data
-      if (!req.file.buffer || req.file.buffer.length === 0) {
-        console.log('Error: Empty media buffer');
-        return res.status(400).json({
-          error: 'Invalid media file',
-          details: 'Media file appears to be empty',
-        });
-      }
     }
 
     console.log('Inserting into database...');
     const result = await pool.query(`
-            INSERT INTO forum_posts (topic_id, title, content, author_name, post_type, media_data, media_type, media_filename)
-            VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
-            RETURNING id, topic_id, title, content, author_name, post_type, media_type, media_filename, likes_count, replies_count, is_pinned, created_at, updated_at
-        `, [parsedTopicId, title, content, author_name, post_type, media_data, media_type, media_filename]);
+            INSERT INTO forum_posts (topic_id, title, content, author_name, user_id, post_type, media_data, media_type, media_filename)
+            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+            RETURNING id, topic_id, title, content, author_name, user_id, post_type, media_type, media_filename, likes_count, replies_count, is_pinned, created_at, updated_at
+        `, [parsedTopicId, title, content, author_name, user_id, post_type, media_data, media_type, media_filename]);
 
     const post = result.rows[0];
     post.media_url = media_filename ? `/forum/media/${post.id}` : null;
+    post.can_edit = user_id && post.user_id === user_id; // Add edit permission flag
+    post.can_delete = user_id && post.user_id === user_id; // Add delete permission flag
 
     console.log('Post created successfully:', {
       id: post.id,
       title: post.title,
-      topic_id: post.topic_id,
-      post_type: post.post_type,
-      media_url: post.media_url,
-      media_type: post.media_type,
-      media_filename: post.media_filename,
-      hasMediaData: !!media_data,
+      user_id: post.user_id,
+      author_name: post.author_name,
     });
+    
     res.status(201).json(post);
   } catch (error) {
     console.error('Error creating post:', error);
-    console.error('Error stack:', error.stack);
     res.status(500).json({
       error: 'Failed to create post',
       details: error.message,
@@ -414,12 +442,23 @@ router.put('/posts/:postId', upload.single('media'), async (req, res) => {
 router.delete('/posts/:postId', async (req, res) => {
   try {
     const { postId } = req.params;
+    const currentUserId = getUserInfo(req).id;
 
-    const result = await pool.query('DELETE FROM forum_posts WHERE id = $1 RETURNING *', [postId]);
-
-    if (result.rows.length === 0) {
+    // Check if post exists and user has permission
+    const postCheck = await pool.query('SELECT user_id, title FROM forum_posts WHERE id = $1', [postId]);
+    
+    if (postCheck.rows.length === 0) {
       return res.status(404).json({ error: 'Post not found' });
     }
+
+    const post = postCheck.rows[0];
+    
+    // Only allow deletion if user owns the post (or is admin - implement later)
+    if (currentUserId && post.user_id !== currentUserId) {
+      return res.status(403).json({ error: 'You do not have permission to delete this post' });
+    }
+
+    const result = await pool.query('DELETE FROM forum_posts WHERE id = $1 RETURNING *', [postId]);
 
     res.json({ message: 'Post deleted successfully', post: result.rows[0] });
   } catch (error) {
@@ -451,12 +490,13 @@ router.post('/posts/:postId/replies', async (req, res) => {
 
     console.log('Inserting reply into database...');
     const result = await pool.query(`
-            INSERT INTO forum_replies (post_id, parent_reply_id, content, author_name)
-            VALUES ($1, $2, $3, $4)
+            INSERT INTO forum_replies (post_id, parent_reply_id, content, author_name, likes_count)
+            VALUES ($1, $2, $3, $4, 0)
             RETURNING *
         `, [postId, parent_reply_id, content.trim(), author_name]);
 
-    console.log('Reply created:', result.rows[0]);
+    const newReply = result.rows[0];
+    console.log('Reply created:', newReply);
 
     // Update replies count in the post
     console.log('Updating replies count...');
@@ -466,8 +506,16 @@ router.post('/posts/:postId/replies', async (req, res) => {
             WHERE id = $1
         `, [postId]);
 
+    // Get updated post replies count
+    const postResult = await pool.query(`
+            SELECT replies_count FROM forum_posts WHERE id = $1
+        `, [postId]);
+
     console.log('Reply creation successful');
-    res.status(201).json(result.rows[0]);
+    res.status(201).json({
+      ...newReply,
+      post_replies_count: postResult.rows[0]?.replies_count || 0
+    });
   } catch (error) {
     console.error('Error creating reply:', error);
     console.error('Error stack:', error.stack);
@@ -506,12 +554,23 @@ router.put('/replies/:replyId', async (req, res) => {
 router.delete('/replies/:replyId', async (req, res) => {
   try {
     const { replyId } = req.params;
+    const currentUserId = getUserInfo(req).id;
 
-    const result = await pool.query('DELETE FROM forum_replies WHERE id = $1 RETURNING *', [replyId]);
-
-    if (result.rows.length === 0) {
+    // Check if reply exists and user has permission
+    const replyCheck = await pool.query('SELECT user_id FROM forum_replies WHERE id = $1', [replyId]);
+    
+    if (replyCheck.rows.length === 0) {
       return res.status(404).json({ error: 'Reply not found' });
     }
+
+    const reply = replyCheck.rows[0];
+    
+    // Only allow deletion if user owns the reply
+    if (currentUserId && reply.user_id !== currentUserId) {
+      return res.status(403).json({ error: 'You do not have permission to delete this reply' });
+    }
+
+    const result = await pool.query('DELETE FROM forum_replies WHERE id = $1 RETURNING *', [replyId]);
 
     res.json({ message: 'Reply deleted successfully', reply: result.rows[0] });
   } catch (error) {
@@ -539,6 +598,35 @@ router.post('/posts/:postId/like', async (req, res) => {
   } catch (error) {
     console.error('Error updating likes:', error);
     res.status(500).json({ error: 'Failed to update likes' });
+  }
+});
+
+// LIKE/UNLIKE reply
+router.post('/replies/:replyId/like', async (req, res) => {
+  try {
+    const { replyId } = req.params;
+    const { action } = req.body; // 'like' or 'unlike'
+
+    console.log('Reply like request:', { replyId, action });
+
+    const increment = action === 'like' ? 1 : -1;
+
+    const result = await pool.query(`
+            UPDATE forum_replies 
+            SET likes_count = GREATEST(0, likes_count + $1)
+            WHERE id = $2
+            RETURNING likes_count
+        `, [increment, replyId]);
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: 'Reply not found' });
+    }
+
+    console.log('Reply likes updated:', result.rows[0]);
+    res.json({ likes_count: result.rows[0].likes_count });
+  } catch (error) {
+    console.error('Error updating reply likes:', error);
+    res.status(500).json({ error: 'Failed to update reply likes' });
   }
 });
 

@@ -23,7 +23,7 @@
           @click="$emit('create-post')"
           color="primary"
           icon="add"
-          label="New Discussion"
+          label="New Discussion 1"
           class="create-btn"
           rounded
         />

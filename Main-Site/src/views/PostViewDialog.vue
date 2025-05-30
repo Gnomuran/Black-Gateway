@@ -40,20 +40,20 @@
             >
               <q-menu v-model="showMenu" anchor="bottom right" self="top right">
                 <q-list>
-                  <q-item clickable @click="editPost">
+                  <q-item clickable @click="editPost" v-close-popup>
                     <q-item-section avatar>
                       <q-icon name="edit" />
                     </q-item-section>
                     <q-item-section>Edit Post</q-item-section>
                   </q-item>
-                  <q-item clickable @click="deletePost">
+                  <q-item clickable @click="deletePost" v-close-popup>
                     <q-item-section avatar>
                       <q-icon name="delete" color="negative" />
                     </q-item-section>
                     <q-item-section>Delete Post</q-item-section>
                   </q-item>
                   <q-separator />
-                  <q-item clickable @click="reportPost">
+                  <q-item clickable @click="reportPost" v-close-popup>
                     <q-item-section avatar>
                       <q-icon name="flag" />
                     </q-item-section>
@@ -117,6 +117,7 @@
                   :alt="post.title"
                   class="post-image"
                   @click="showImageFullscreen"
+                  @error="handleImageError"
                 />
                 <div v-if="post.content" v-html="formatContent(post.content)" class="media-caption"></div>
               </div>
@@ -127,6 +128,7 @@
                   :src="getMediaUrl(post.media_url)"
                   class="post-video"
                   controls
+                  @error="handleVideoError"
                 />
                 <div v-if="post.content" v-html="formatContent(post.content)" class="media-caption"></div>
               </div>
@@ -134,9 +136,12 @@
               <!-- GIF Content -->
               <div v-else-if="post.post_type === 'gif' && post.media_url" class="media-content">
                 <img 
-                  :src="post.media_url"
+                  :src="getMediaUrl(post.media_url)"
                   :alt="post.title"
                   class="post-gif"
+                  @error="handleImageError"
+                  @load="handleImageLoad"
+                  loading="lazy"
                 />
                 <div v-if="post.content" v-html="formatContent(post.content)" class="media-caption"></div>
               </div>
@@ -177,6 +182,7 @@
                     maxlength="5000"
                     counter
                     class="reply-input"
+                    ref="replyInput"
                   />
                   <div class="reply-actions">
                     <div class="reply-tools">
@@ -254,6 +260,8 @@
             rows="4"
             maxlength="5000"
             counter
+            ref="editReplyInput"
+            :rules="[val => !!val || 'Reply content is required', val => val.length >= 5 || 'Reply must be at least 5 characters']"
           />
         </q-card-section>
         
@@ -261,6 +269,7 @@
           <q-btn flat label="Cancel" @click="cancelEditReply" />
           <q-btn 
             :loading="forumStore.isLoading"
+            :disable="!editingReplyContent.trim()"
             @click="saveEditReply"
             color="primary"
             label="Save Changes"
@@ -268,16 +277,25 @@
         </q-card-actions>
       </q-card>
     </q-dialog>
+
+    <!-- Edit Post Dialog -->
+    <EditPostDialog
+      v-model="showEditDialog"
+      :post="post"
+      :topics="availableTopics"
+      @post-updated="handlePostUpdated"
+    />
   </q-dialog>
 </template>
 
 <script setup>
-import { ref, computed, watch } from 'vue'
+import { ref, computed, watch, nextTick } from 'vue'
 import { useForumStore } from '../stores/forum'
-// import { useQuasar } from 'quasar'  // Removed for now
+import { useQuasar } from 'quasar'
 import ReplyCard from '../components/ReplyCard.vue'
+import EditPostDialog from '../components/EditPostDialog.vue'
 
-// const $q = useQuasar()  // Removed for now
+const $q = useQuasar()
 const forumStore = useForumStore()
 
 // Props & Emits
@@ -286,10 +304,15 @@ const props = defineProps({
   post: Object
 })
 
-const emit = defineEmits(['update:modelValue', 'reply-created', 'post-updated', 'post-deleted'])
+const emit = defineEmits(['update:modelValue', 'reply-created', 'post-updated', 'post-deleted', 'refresh'])
+
+// Refs
+const replyInput = ref(null)
+const editReplyInput = ref(null)
 
 // Reactive Data
 const showMenu = ref(false)
+const showEditDialog = ref(false)
 const isLiked = ref(false)
 const replyContent = ref('')
 const showEditReplyDialog = ref(false)
@@ -302,10 +325,24 @@ const dialogVisible = computed({
   set: (value) => emit('update:modelValue', value)
 })
 
+const availableTopics = computed(() => {
+  return forumStore.topics || (props.post ? [{
+    id: props.post.topic_id,
+    title: props.post.topic_title || 'Unknown Topic',
+    description: '',
+    icon: 'forum',
+    color: '#6366f1'
+  }] : [])
+})
+
 // Methods
 const closeDialog = () => {
   dialogVisible.value = false
   replyContent.value = ''
+  // Clear any edit states
+  showEditReplyDialog.value = false
+  editingReply.value = null
+  editingReplyContent.value = ''
 }
 
 const formatDate = (dateString) => {
@@ -351,19 +388,57 @@ const formatContent = (content) => {
 
 const getMediaUrl = (url) => {
   if (!url) return ''
+  
+  // For GIFs that are direct URLs (from Tenor), return as-is
+  if (url.startsWith('http://') || url.startsWith('https://')) {
+    return url
+  }
+  
+  // For media stored in database, construct proper URL
   if (url.startsWith('/forum/media/')) {
     return `http://localhost:5000${url}`
   }
+  
   return url
+}
+
+const handleImageLoad = () => {
+  console.log('Media loaded successfully')
+}
+
+const handleImageError = (event) => {
+  console.warn('Failed to load image:', event.target.src)
+  event.target.style.display = 'none'
+  
+  // Show a placeholder
+  const errorDiv = document.createElement('div')
+  errorDiv.className = 'media-error'
+  errorDiv.innerHTML = '<div style="display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 2rem; color: #64748b; background: #f8fafc; border: 1px dashed #cbd5e1; border-radius: 0.5rem;"><svg width="2rem" height="2rem" fill="currentColor" viewBox="0 0 24 24"><path d="M21 19V5c0-1.1-.9-2-2-2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2zM8.5 13.5l2.5 3.01L14.5 12l4.5 6H5l3.5-4.5z"/></svg><p style="margin: 0.5rem 0 0 0;">Failed to load media</p></div>'
+  
+  if (event.target.parentNode) {
+    event.target.parentNode.insertBefore(errorDiv, event.target)
+  }
+}
+
+const handleVideoError = (event) => {
+  console.warn('Failed to load video:', event.target.src)
+  handleImageError(event) // Reuse the same error handling
 }
 
 const toggleLike = async () => {
   if (!props.post) return
   
-  const action = isLiked.value ? 'unlike' : 'like'
-  isLiked.value = !isLiked.value
-  
-  await forumStore.likePost(props.post.id, action)
+  try {
+    const action = isLiked.value ? 'unlike' : 'like'
+    isLiked.value = !isLiked.value
+    
+    await forumStore.likePost(props.post.id, action)
+    console.log('Post like toggled successfully')
+  } catch (error) {
+    // Revert on error
+    isLiked.value = !isLiked.value
+    console.error('Error toggling post like:', error)
+  }
 }
 
 const sharePost = () => {
@@ -376,40 +451,54 @@ const sharePost = () => {
       title: props.post.title,
       text: props.post.content.substring(0, 100) + '...',
       url: url
-    })
+    }).catch(console.error)
   } else {
     navigator.clipboard.writeText(url).then(() => {
-      console.log('Link copied to clipboard!')
-      // $q.notify({
-      //   type: 'positive',
-      //   message: 'Link copied to clipboard!',
-      //   position: 'top'
-      // })
-    })
+      $q.notify({
+        type: 'positive',
+        message: 'Link copied to clipboard!',
+        position: 'top'
+      })
+    }).catch(console.error)
   }
 }
 
 const editPost = () => {
-  emit('edit', props.post)
+  console.log('Opening edit dialog for post:', props.post?.id)
+  showEditDialog.value = true
 }
 
 const deletePost = () => {
   if (confirm(`Are you sure you want to delete "${props.post.title}"? This action cannot be undone.`)) {
+    console.log('Deleting post:', props.post?.id)
     emit('post-deleted', props.post)
   }
 }
 
 const reportPost = () => {
-  const reason = prompt('Please select a reason for reporting this post:\n\n1. Spam or misleading\n2. Inappropriate content\n3. Harassment or abuse\n4. Copyright violation\n5. Other\n\nEnter 1-5:')
-  
-  if (reason && ['1', '2', '3', '4', '5'].includes(reason)) {
-    console.log('Thank you for your report. We will review it shortly.')
-    // $q.notify({
-    //   type: 'positive',
-    //   message: 'Thank you for your report. We will review it shortly.',
-    //   position: 'top'
-    // })
-  }
+  $q.dialog({
+    title: 'Report Post',
+    message: 'Please select a reason for reporting this post:',
+    options: {
+      type: 'radio',
+      model: 'spam',
+      items: [
+        { label: 'Spam or misleading', value: 'spam' },
+        { label: 'Inappropriate content', value: 'inappropriate' },
+        { label: 'Harassment or abuse', value: 'harassment' },
+        { label: 'Copyright violation', value: 'copyright' },
+        { label: 'Other', value: 'other' }
+      ]
+    },
+    cancel: true,
+    persistent: true
+  }).onOk(() => {
+    $q.notify({
+      type: 'positive',
+      message: 'Thank you for your report. We will review it shortly.',
+      position: 'top'
+    })
+  })
 }
 
 const showImageFullscreen = () => {
@@ -425,15 +514,25 @@ const showImageFullscreen = () => {
 }
 
 const formatReply = (before, after) => {
-  const textarea = document.querySelector('.reply-input textarea')
-  if (textarea) {
-    const start = textarea.selectionStart
-    const end = textarea.selectionEnd
-    const text = replyContent.value
-    const selectedText = text.substring(start, end) || 'text'
-    
-    replyContent.value = text.substring(0, start) + before + selectedText + after + text.substring(end)
-  }
+  nextTick(() => {
+    const textarea = replyInput.value?.$el.querySelector('textarea')
+    if (textarea) {
+      const start = textarea.selectionStart
+      const end = textarea.selectionEnd
+      const text = replyContent.value
+      const selectedText = text.substring(start, end) || 'text'
+      
+      const newContent = text.substring(0, start) + before + selectedText + after + text.substring(end)
+      replyContent.value = newContent
+      
+      // Reset cursor position
+      nextTick(() => {
+        const newPosition = start + before.length + selectedText.length + after.length
+        textarea.focus()
+        textarea.setSelectionRange(newPosition, newPosition)
+      })
+    }
+  })
 }
 
 const submitReply = async () => {
@@ -451,21 +550,43 @@ const submitReply = async () => {
     
     if (reply) {
       console.log('Reply created successfully:', reply)
+      
+      // Add the new reply to the post's replies array
+      if (!props.post.replies) {
+        props.post.replies = []
+      }
+      props.post.replies.push(reply)
+      
       emit('reply-created', reply)
       replyContent.value = ''
       
-      console.log('Reply posted successfully!')
+      $q.notify({
+        type: 'positive',
+        message: 'Reply posted successfully!',
+        position: 'top'
+      })
     } else {
       console.error('Failed to create reply - no reply returned')
+      $q.notify({
+        type: 'negative',
+        message: 'Failed to post reply. Please try again.',
+        position: 'top'
+      })
     }
   } catch (error) {
     console.error('Error in submitReply:', error)
+    $q.notify({
+      type: 'negative',
+      message: 'Failed to post reply. Please try again.',
+      position: 'top'
+    })
   }
 }
 
 const editReply = (reply) => {
+  console.log('Editing reply:', reply)
   editingReply.value = reply
-  editingReplyContent.value = reply.content
+  editingReplyContent.value = reply.content || ''
   showEditReplyDialog.value = true
 }
 
@@ -476,41 +597,139 @@ const cancelEditReply = () => {
 }
 
 const saveEditReply = async () => {
-  if (!editingReply.value || !editingReplyContent.value.trim()) return
-  
-  const updatedReply = await forumStore.updateReply(editingReply.value.id, editingReplyContent.value.trim())
-  
-  if (updatedReply) {
-    cancelEditReply()
-    
-    console.log('Reply updated successfully!')
-    // $q.notify({
-    //   type: 'positive',
-    //   message: 'Reply updated successfully!',
-    //   position: 'top'
-    // })
+  if (!editingReply.value || !editingReplyContent.value.trim()) {
+    console.log('Cannot save reply: missing data')
+    return
   }
-}
-
-const deleteReply = (reply) => {
-  if (confirm('Are you sure you want to delete this reply? This action cannot be undone.')) {
-    forumStore.deleteReply(reply.id).then((success) => {
-      if (success) {
-        console.log('Reply deleted successfully!')
-        // $q.notify({
-        //   type: 'positive',
-        //   message: 'Reply deleted successfully!',
-        //   position: 'top'
-        // })
+  
+  // Validate the input
+  if (editReplyInput.value) {
+    editReplyInput.value.validate()
+    if (editReplyInput.value.hasError) {
+      return
+    }
+  }
+  
+  try {
+    console.log('Updating reply:', editingReply.value.id, 'with content:', editingReplyContent.value.trim())
+    
+    const updatedReply = await forumStore.updateReply(editingReply.value.id, {
+      content: editingReplyContent.value.trim()
+    })
+    
+    if (updatedReply) {
+      console.log('Reply updated successfully:', updatedReply)
+      
+      // Update the reply in the current post's replies array
+      if (props.post && props.post.replies) {
+        const replyIndex = props.post.replies.findIndex(r => r.id === updatedReply.id)
+        if (replyIndex !== -1) {
+          props.post.replies[replyIndex] = updatedReply
+        }
       }
+      
+      cancelEditReply()
+      
+      $q.notify({
+        type: 'positive',
+        message: 'Reply updated successfully!',
+        position: 'top'
+      })
+    } else {
+      console.error('Failed to update reply - no reply returned')
+      $q.notify({
+        type: 'negative',
+        message: 'Failed to update reply. Please try again.',
+        position: 'top'
+      })
+    }
+  } catch (error) {
+    console.error('Error updating reply:', error)
+    $q.notify({
+      type: 'negative',
+      message: 'Failed to update reply. Please try again.',
+      position: 'top'
     })
   }
 }
 
-const likeReply = async (reply) => {
-  // Implementation for liking replies would be similar to posts
-  console.log('Like reply:', reply.id)
+const deleteReply = async (reply) => {
+  if (confirm('Are you sure you want to delete this reply? This action cannot be undone.')) {
+    try {
+      console.log('Deleting reply:', reply.id)
+      
+      const success = await forumStore.deleteReply(reply.id)
+      
+      if (success) {
+        console.log('Reply deleted successfully!')
+        
+        // Remove the reply from the current post's replies array
+        if (props.post && props.post.replies) {
+          props.post.replies = props.post.replies.filter(r => r.id !== reply.id)
+        }
+        
+        $q.notify({
+          type: 'positive',
+          message: 'Reply deleted successfully!',
+          position: 'top'
+        })
+      } else {
+        console.error('Failed to delete reply')
+        $q.notify({
+          type: 'negative',
+          message: 'Failed to delete reply. Please try again.',
+          position: 'top'
+        })
+      }
+    } catch (error) {
+      console.error('Error deleting reply:', error)
+      $q.notify({
+        type: 'negative',
+        message: 'Failed to delete reply. Please try again.',
+        position: 'top'
+      })
+    }
+  }
 }
+
+const likeReply = async (replyData) => {
+  try {
+    console.log('Liking reply:', replyData)
+    
+    // Call the forum store to like the reply
+    await forumStore.likeReply(replyData.replyId, replyData.action)
+    
+    console.log('Reply liked successfully')
+  } catch (error) {
+    console.error('Error liking reply:', error)
+  }
+}
+
+const handlePostUpdated = (updatedPost) => {
+  console.log('Post updated:', updatedPost)
+  
+  // Update the current post with the updated data
+  if (props.post && props.post.id === updatedPost.id) {
+    Object.assign(props.post, updatedPost)
+  }
+  
+  emit('post-updated', updatedPost)
+  showEditDialog.value = false
+  
+  $q.notify({
+    type: 'positive',
+    message: 'Discussion updated successfully!',
+    position: 'top'
+  })
+}
+
+// Watchers
+watch(() => props.post, (newPost) => {
+  if (newPost) {
+    // Reset like status - you could track this in localStorage or user state
+    isLiked.value = false
+  }
+})
 </script>
 
 <style scoped>

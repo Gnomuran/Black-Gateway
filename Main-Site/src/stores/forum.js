@@ -114,6 +114,17 @@ export const useForumStore = defineStore('forum', {
         this.clearError()
         
         const response = await api.get(`/posts/${postId}`)
+        
+        // Ensure replies array exists and is properly formatted
+        if (response.data.replies && Array.isArray(response.data.replies)) {
+          response.data.replies = response.data.replies.map(reply => ({
+            ...reply,
+            likes_count: reply.likes_count || 0
+          }))
+        } else {
+          response.data.replies = []
+        }
+        
         this.currentPost = response.data
         
         this.loading = false
@@ -269,17 +280,27 @@ export const useForumStore = defineStore('forum', {
         console.log('Reply created successfully:', response.data)
         
         // Add reply to current post if it's loaded
-        if (this.currentPost && this.currentPost.id === postId) {
+        if (this.currentPost && this.currentPost.id === parseInt(postId)) {
           if (!this.currentPost.replies) {
             this.currentPost.replies = []
           }
+          // Add new reply to the list
           this.currentPost.replies.push(response.data)
+          
+          // Update replies count from response if available
+          if (response.data.post_replies_count !== undefined) {
+            this.currentPost.replies_count = response.data.post_replies_count
+          }
         }
         
         // Update replies count in posts array
-        const post = this.posts.find(p => p.id === postId)
+        const post = this.posts.find(p => p.id === parseInt(postId))
         if (post) {
-          post.replies_count = (post.replies_count || 0) + 1
+          if (response.data.post_replies_count !== undefined) {
+            post.replies_count = response.data.post_replies_count
+          } else {
+            post.replies_count = (post.replies_count || 0) + 1
+          }
         }
         
         this.loading = false
@@ -331,6 +352,26 @@ export const useForumStore = defineStore('forum', {
       } catch (error) {
         this.handleError(error)
         return false
+      }
+    },
+
+    // Reply likes functionality
+    async likeReply(replyId, action = 'like') {
+      try {
+        const response = await api.post(`/replies/${replyId}/like`, { action })
+        
+        // Update likes count in current post replies if loaded
+        if (this.currentPost && this.currentPost.replies) {
+          const reply = this.currentPost.replies.find(r => r.id === replyId)
+          if (reply) {
+            reply.likes_count = response.data.likes_count
+          }
+        }
+        
+        return response.data.likes_count
+      } catch (error) {
+        this.handleError(error)
+        return null
       }
     },
 
@@ -394,6 +435,14 @@ export const useForumStore = defineStore('forum', {
         totalPosts: 0,
         postsPerPage: 20
       }
+    },
+
+    // Method to refresh current post data
+    async refreshCurrentPost() {
+      if (this.currentPost && this.currentPost.id) {
+        return await this.fetchPost(this.currentPost.id)
+      }
+      return null
     }
   }
 })
