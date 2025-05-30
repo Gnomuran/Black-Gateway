@@ -13,7 +13,7 @@
         <div class="row justify-center">
           <div class="col-12 col-md-8 text-center">
             <div class="q-pa-xl">
-              <h1 class="text-h2 text-accent q-mb-md">Black Gateway</h1>
+              <h1 class="text-h2 text-accent  q-mb-md">Black Gateway</h1>
               <p class="text-h5 text-white q-mb-xl">
                 Deine personalisierte Lernplattform mit NASA-Integration
               </p>
@@ -83,13 +83,40 @@
                     <div class="row q-gutter-md justify-center q-mt-lg">
                       <q-btn
                         color="info"
-                        text-color="dark"
+                        text-color="primary"
                         label="Weiter lernen"
                         size="lg"
-                        rounded
+                      
                         unelevated
-                        icon="mdi-book-open-page-variant"
                         @click="goToLearning"
+                      />
+
+                      <q-btn
+                        color="info"
+                        text-color="primary"
+                        label="Dashboard"
+                        size="lg"
+                        
+                        unelevated
+                        @click="router.push('/dashboard')"
+                      />
+                      <q-btn
+                        color="info"
+                        text-color="primary"
+                        label="Forum"
+                        size="lg"
+                       
+                        unelevated
+                        @click="router.push('/forum')"
+                      />
+                        <q-btn
+                        color="info"
+                        text-color="primary"
+                        label="Ai Assistent"
+                        size="lg"
+                       
+                        unelevated
+                        @click="router.push('/deepseek')"
                       />
                       
                     </div>
@@ -129,6 +156,7 @@
                     @click="handleLogout"
                   />
                 </div>
+                
               </div>
               
               <!-- Nicht eingeloggte Benutzer - Standard Journey Cards -->
@@ -358,7 +386,6 @@
                 size="xl"
                 rounded
                 unelevated
-                icon="mdi-book-open-page-variant"
                 @click="goToLearning"
                 class="q-px-xl"
               />
@@ -513,9 +540,7 @@ const goToLearning = () => {
   router.push('/kurse'); // oder dashboard oder der Hauptlernbereich
 };
 
-const goToProfile = () => {
-  router.push('/profile');
-};
+
 
 const handleLogout = async () => {
   try {
