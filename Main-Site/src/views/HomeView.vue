@@ -1,8 +1,8 @@
 <template>
   <div class="three-background-container">
     <!-- Three.js Hintergrund -->
-    <div class="three-background">
-      <ThreeModel />
+    <div>
+      <Blackhole-MainSite />
     </div>
     
     <!-- Content der darüber liegt -->
@@ -14,11 +14,13 @@
 </template>
 
 <script>
-import ThreeModel from '@/components/ThreeModel.vue';
+import BlackholeMainSite from '@/components/Blackhole-MainSite.vue';
 
 export default {
-  components: { ThreeModel }
-}
+  components: {
+    BlackholeMainSite,
+  },
+};
 </script>
 
 <style scoped>
