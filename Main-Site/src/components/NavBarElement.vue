@@ -1,3 +1,4 @@
+<!-- Main-Site/src/components/NavBarElement.vue -->
 <template>
   <div>
     <q-header elevated class="bg-primary text-white responsive-header">
@@ -26,6 +27,7 @@
           color="negative"
           class="q-ml-sm desktop-only"
           @click="logout"
+          :loading="isLoggingOut"
         />
         
         <q-btn
@@ -37,6 +39,7 @@
           color="negative"
           @click="logout"
           aria-label="Logout"
+          :loading="isLoggingOut"
         />
       </q-toolbar>
 
@@ -99,11 +102,20 @@
         </q-item>
 
         <q-item clickable v-ripple to="/ai-assistant" exact class="text-info" active-class="bg-primary text-accent">
-  <q-item-section avatar>
-    <q-icon name="smart_toy" />
-  </q-item-section>
-  <q-item-section>AI Assistant</q-item-section>
-</q-item>
+          <q-item-section avatar>
+            <q-icon name="smart_toy" />
+          </q-item-section>
+          <q-item-section>AI Assistant</q-item-section>
+        </q-item>
+
+        <!-- Mobile Logout -->
+        <q-separator class="q-my-md" />
+        <q-item clickable @click="logout" class="text-negative">
+          <q-item-section avatar>
+            <q-icon name="logout" />
+          </q-item-section>
+          <q-item-section>Logout</q-item-section>
+        </q-item>
       </q-list>
     </q-drawer>
   </div>
@@ -112,11 +124,17 @@
 <script setup>
 import { computed, ref, onMounted, onUnmounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-// Quasar-Instanz wird nicht mehr benötigt, da originale logout-Funktion verwendet wird
+import { useAuthStore } from '../stores/auth'
+import { useQuasar } from 'quasar'
+
 const route = useRoute()
 const router = useRouter()
+const authStore = useAuthStore()
+const $q = useQuasar()
+
 const leftDrawerOpen = ref(false)
 const isMobile = ref(false)
+const isLoggingOut = ref(false)
 
 // Prüfe, ob es sich um Login oder Register Route handelt
 const isLoginOrRegisterRoute = computed(() => {
@@ -128,10 +146,68 @@ const toggleLeftDrawer = () => {
   leftDrawerOpen.value = !leftDrawerOpen.value
 }
 
-// Originale Logout Funktion
-const logout = () => {
-  localStorage.removeItem('token')
-  router.push('/login')
+// 🔧 VERBESSERTE Logout Funktion
+const logout = async () => {
+  if (isLoggingOut.value) return // Verhindere mehrfache Logout-Versuche
+  
+  try {
+    isLoggingOut.value = true
+    console.log('🚪 Starting logout process...')
+    
+    // 1. Bestätigungsdialog (optional)
+    const shouldLogout = await new Promise(resolve => {
+      $q.dialog({
+        title: 'Abmelden',
+        message: 'Möchtest du dich wirklich abmelden?',
+        cancel: 'Abbrechen',
+        ok: 'Abmelden',
+        persistent: false
+      }).onOk(() => resolve(true))
+        .onCancel(() => resolve(false))
+    })
+    
+    if (!shouldLogout) {
+      console.log('🚫 Logout cancelled by user')
+      return
+    }
+    
+    // 2. Logout über Auth Store
+    await authStore.logout()
+    console.log('✅ Logout successful')
+    
+    // 3. Success Notification
+    $q.notify({
+      message: 'Erfolgreich abgemeldet',
+      color: 'positive',
+      icon: 'logout',
+      timeout: 2000,
+      position: 'top'
+    })
+    
+    // 4. Zur Login-Seite weiterleiten
+    console.log('🔄 Redirecting to login...')
+    await router.push('/login')
+    console.log('✅ Redirected to login page')
+    
+  } catch (error) {
+    console.error('❌ Logout error:', error)
+    
+    // Bei Fehlern trotzdem zur Login-Seite weiterleiten
+    $q.notify({
+      message: 'Fehler beim Abmelden, du wirst trotzdem abgemeldet',
+      color: 'warning',
+      icon: 'warning',
+      timeout: 3000,
+      position: 'top'
+    })
+    
+    // Force logout durch Auth Store reset und Weiterleitung
+    authStore.resetAuthState()
+    await router.push('/login')
+    
+  } finally {
+    isLoggingOut.value = false
+  }
 }
 
 // Resize-Handler für responsives Verhalten
@@ -150,11 +226,10 @@ onUnmounted(() => {
 </script>
 
 <style lang="scss" scoped>
-
-.q-drawer
-{
-  background-color: #1B1B2F ;
+.q-drawer {
+  background-color: #1B1B2F;
 }
+
 .responsive-header {
   transition: height 0.3s ease;
 }
