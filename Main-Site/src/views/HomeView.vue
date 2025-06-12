@@ -2,7 +2,7 @@
   <div class="three-background-container">
     <!-- Three.js Hintergrund -->
     <div class="three-background">
-      <ThreeModel />
+      <Blackhole-MainSite />
     </div>
     
     <!-- Overlay Content -->
@@ -424,7 +424,7 @@ import { ref, computed, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
 import { useAuthStore } from '../stores/auth';
 import { useNasaStore } from '../stores/nasa';
-import ThreeModel from '@/components/ThreeModel.vue';
+import BlackholeMainSite from '@/components/Blackhole-MainSite.vue';
 
 const router = useRouter();
 const authStore = useAuthStore();
@@ -578,6 +578,182 @@ const scrollToPreview = () => {
   position: relative;
   z-index: 1;
   width: 100%;
+}
+
+/* Section Backgrounds */
+.hero-section {
+  min-height: 100vh;
+  background: rgba(0, 0, 0, 0.2);
+  backdrop-filter: blur(5px);
+  display: flex;
+  align-items: center;
+}
+
+.preview-section {
+  min-height: 100vh;
+  background: rgba(0, 0, 0, 0.4);
+  backdrop-filter: blur(10px);
+  padding: 4rem 0;
+}
+
+.steps-section {
+  min-height: 100vh;
+  background: rgba(255, 185, 141, 0.05);
+  backdrop-filter: blur(10px);
+  padding: 4rem 0;
+  display: flex;
+  align-items: center;
+}
+
+.faq-section {
+  min-height: 80vh;
+  background: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(10px);
+  padding: 4rem 0;
+}
+
+/* Custom Card Styles */
+.welcome-card {
+  background: rgba(255, 185, 141, 0.15) !important;
+  border: 2px solid rgba(255, 185, 141, 0.3);
+  max-width: 600px;
+  margin: 0 auto;
+}
+
+.logged-in-section {
+  animation: fadeInUp 0.6s ease-out;
+}
+
+/* NASA Avatar Styles */
+.nasa-avatar-container {
+  position: relative;
+  display: inline-block;
+}
+
+.nasa-avatar {
+  border: 3px solid rgba(255, 185, 141, 0.5);
+  transition: all 0.3s ease;
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.nasa-avatar:hover {
+  border-color: rgba(255, 185, 141, 0.8);
+  transform: scale(1.05);
+}
+
+.loading-avatar {
+  background: rgba(255, 185, 141, 0.2) !important;
+}
+
+.apod-image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: inherit;
+}
+
+.nasa-badge {
+  position: absolute;
+  bottom: -8px;
+  right: -8px;
+  font-size: 0.7rem;
+  font-weight: 600;
+}
+
+.nasa-info {
+  max-width: 400px;
+  margin: 0 auto;
+}
+
+.nasa-details {
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 8px;
+  margin-top: 1rem;
+}
+
+/* Navigation Buttons - Haupt Navigation */
+.main-navigation {
+  max-width: 600px;
+  margin: 0 auto;
+}
+
+.uniform-btn {
+  min-width: 140px;
+  min-height: 50px;
+  font-weight: 600;
+  transition: all 0.3s ease;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+  text-transform: none;
+  white-space: normal;
+  padding: 12px 16px;
+}
+
+.uniform-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+.uniform-btn .q-btn__content {
+  flex-direction: row;
+  gap: 8px;
+  justify-content: center;
+  align-items: center;
+}
+
+.uniform-btn .q-icon {
+  font-size: 20px;
+}
+
+/* Quick Access Navigation */
+.quick-access-section {
+  max-width: 300px;
+  margin: 0 auto;
+}
+
+.quick-access-card {
+  background: rgba(255, 255, 255, 0.05) !important;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 12px;
+  backdrop-filter: blur(5px);
+}
+
+.quick-btn {
+  width: 100%;
+  aspect-ratio: 1;
+  transition: all 0.2s ease;
+}
+
+.quick-btn:hover {
+  transform: scale(1.1);
+  background: rgba(255, 255, 255, 0.1) !important;
+}
+
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.journey-card {
+  background: rgba(255, 255, 255, 0.1) !important;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  transition: all 0.3s ease;
+}
+
+.journey-card:hover {
+  background: rgba(255, 255, 255, 0.15) !important;
+  transform: translateY(-5px);
+}
+
+.demo-card {
+  background: rgba(255, 255, 255, 0.08) !important;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  transition: all 0.3s ease;
 }
 
 /* Section Backgrounds */
