@@ -1,9 +1,12 @@
+/* eslint-disable radix */
+/* eslint-disable no-use-before-define */
+/* eslint-disable consistent-return */
 /* eslint-disable camelcase */
 // server/src/api/routes/ai-assistant.js
 import express from 'express';
 import axios from 'axios';
 import rateLimit from 'express-rate-limit';
-import { query } from '../../../boilerplate/db/index.js';
+import { query } from '../../../boilerplate/db/index.js'; // Ensure this path is correct for your project structure
 
 const router = express.Router();
 
@@ -19,11 +22,11 @@ const aiRateLimit = rateLimit({
   legacyHeaders: false,
 });
 
-// OpenRouter API configuration
-const OPENROUTER_CONFIG = {
-  apiKey: process.env.OPENROUTER_API_KEY,
-  baseURL: process.env.OPENROUTER_BASE_URL || 'https://openrouter.ai/api/v1',
-  model: process.env.OPENROUTER_MODEL || 'deepseek/deepseek-r1-distill-llama-70b',
+// DeepSeek API configuration (adjusted for direct DeepSeek API key)
+const DEEPSEEK_CONFIG = {
+  apiKey: process.env.DEEPSEEK_API_KEY, // Use a specific environment variable for DeepSeek
+  baseURL: process.env.DEEPSEEK_BASE_URL || 'https://api.deepseek.com/v1', // DeepSeek's official base URL
+  model: process.env.DEEPSEEK_MODEL || 'deepseek-chat', // DeepSeek's recommended chat model, adjust if needed
   systemPrompt: process.env.AI_SYSTEM_PROMPT || `You are a highly knowledgeable physics AI assistant specializing in quantum mechanics, relativity, black holes, particle physics, and astrophysics. 
 
 Your expertise includes:
@@ -47,29 +50,29 @@ Guidelines for responses:
 Format equations using standard mathematical notation and explain their significance.`,
 };
 
-// DeepSeek R1 API client with conversation context
+// DeepSeek API client with conversation context
 class DeepSeekClient {
   constructor() {
-    this.apiKey = OPENROUTER_CONFIG.apiKey;
-    this.baseURL = OPENROUTER_CONFIG.baseURL;
-    this.model = OPENROUTER_CONFIG.model;
-    this.systemPrompt = OPENROUTER_CONFIG.systemPrompt;
+    this.apiKey = DEEPSEEK_CONFIG.apiKey;
+    this.baseURL = DEEPSEEK_CONFIG.baseURL;
+    this.model = DEEPSEEK_CONFIG.model;
+    this.systemPrompt = DEEPSEEK_CONFIG.systemPrompt;
 
     if (!this.apiKey) {
-      console.error('⚠️ OPENROUTER_API_KEY not found in environment variables');
+      console.error('⚠️ DEEPSEEK_API_KEY not found in environment variables');
     } else {
-      console.log('✅ DeepSeek R1 client initialized successfully');
+      console.log('✅ DeepSeek client initialized successfully');
       console.log('📊 Model:', this.model);
     }
   }
 
   async generateResponse(userMessage, conversationHistory = [], context = {}) {
     if (!this.apiKey) {
-      throw new Error('OpenRouter API key not configured');
+      throw new Error('DeepSeek API key not configured');
     }
 
     try {
-      console.log('🤖 Sending request to DeepSeek R1 via OpenRouter');
+      console.log('🤖 Sending request to DeepSeek');
       console.log('📝 Message length:', userMessage.length);
       console.log('📚 Conversation history length:', conversationHistory.length);
       console.log('🎯 Model:', this.model);
@@ -79,14 +82,14 @@ class DeepSeekClient {
         {
           role: 'system',
           content: this.systemPrompt,
-        }
+        },
       ];
 
       // Add conversation history (last 20 messages to avoid token limits)
       const recentHistory = conversationHistory.slice(-20);
-      messages.push(...recentHistory.map(msg => ({
+      messages.push(...recentHistory.map((msg) => ({
         role: msg.role === 'assistant' ? 'assistant' : 'user',
-        content: msg.content
+        content: msg.content,
       })));
 
       // Add current user message
@@ -111,8 +114,9 @@ class DeepSeekClient {
           headers: {
             Authorization: `Bearer ${this.apiKey}`,
             'Content-Type': 'application/json',
-            'HTTP-Referer': 'http://localhost:5000',
-            'X-Title': 'Black Gateway Physics AI Assistant',
+            // No need for OpenRouter specific headers if using direct DeepSeek API
+            // 'HTTP-Referer': 'http://localhost:5000',
+            // 'X-Title': 'Black Gateway Physics AI Assistant',
           },
           timeout: 30000,
         },
@@ -121,10 +125,10 @@ class DeepSeekClient {
       const aiResponse = response.data.choices[0]?.message?.content;
 
       if (!aiResponse) {
-        throw new Error('No response content from DeepSeek R1');
+        throw new Error('No response content from DeepSeek');
       }
 
-      console.log('✅ DeepSeek R1 response received successfully');
+      console.log('✅ DeepSeek response received successfully');
       console.log('📏 Response length:', aiResponse.length);
       console.log('💰 Token usage:', JSON.stringify(response.data.usage));
 
@@ -133,10 +137,10 @@ class DeepSeekClient {
         model: this.model,
         usage: response.data.usage,
         timestamp: new Date().toISOString(),
-        source: 'deepseek-r1',
+        source: 'deepseek-api', // Changed source to reflect direct DeepSeek usage
       };
     } catch (error) {
-      console.error('❌ DeepSeek R1 API Error:', error.message);
+      console.error('❌ DeepSeek API Error:', error.message);
 
       if (error.response) {
         console.error('📊 Response status:', error.response.status);
@@ -149,7 +153,7 @@ class DeepSeekClient {
         } else if (error.response.status === 400) {
           throw new Error('Invalid request format. Please try rephrasing your question.');
         } else if (error.response.status === 503) {
-          throw new Error('DeepSeek R1 service temporarily unavailable. Please try again in a moment.');
+          throw new Error('DeepSeek service temporarily unavailable. Please try again in a moment.');
         }
       }
 
@@ -206,14 +210,14 @@ class DeepSeekClient {
   }
 }
 
-// Initialize DeepSeek client
+// Initialize DeepSeek client with the new config
 const deepseekClient = new DeepSeekClient();
 
-// Conversation Management Functions
+// Conversation Management Functions (no changes needed here, as they are database interactions)
 const createConversation = async (userId, title = 'New Chat') => {
   const { rows } = await query(
     'INSERT INTO ai_chat_conversations (user_id, title) VALUES ($1, $2) RETURNING *',
-    [userId, title]
+    [userId, title],
   );
   return rows[0];
 };
@@ -221,9 +225,9 @@ const createConversation = async (userId, title = 'New Chat') => {
 const getConversations = async (userId) => {
   const { rows } = await query(
     `SELECT * FROM ai_chat_conversation_summaries 
-     WHERE user_id = $1 AND is_archived = false 
-     ORDER BY updated_at DESC`,
-    [userId]
+      WHERE user_id = $1 AND is_archived = false 
+      ORDER BY updated_at DESC`,
+    [userId],
   );
   return rows;
 };
@@ -231,7 +235,7 @@ const getConversations = async (userId) => {
 const getConversation = async (conversationId, userId) => {
   const { rows } = await query(
     'SELECT * FROM ai_chat_conversations WHERE id = $1 AND user_id = $2',
-    [conversationId, userId]
+    [conversationId, userId],
   );
   return rows[0];
 };
@@ -245,10 +249,10 @@ const getConversationMessages = async (conversationId, userId) => {
 
   const { rows } = await query(
     `SELECT id, role, content, metadata, tokens_used, model_used, created_at 
-     FROM ai_chat_messages 
-     WHERE conversation_id = $1 
-     ORDER BY created_at ASC`,
-    [conversationId]
+      FROM ai_chat_messages 
+      WHERE conversation_id = $1 
+      ORDER BY created_at ASC`,
+    [conversationId],
   );
   return rows;
 };
@@ -256,8 +260,8 @@ const getConversationMessages = async (conversationId, userId) => {
 const addMessage = async (conversationId, role, content, metadata = {}, tokensUsed = 0, modelUsed = null) => {
   const { rows } = await query(
     `INSERT INTO ai_chat_messages (conversation_id, role, content, metadata, tokens_used, model_used) 
-     VALUES ($1, $2, $3, $4, $5, $6) RETURNING *`,
-    [conversationId, role, content, JSON.stringify(metadata), tokensUsed, modelUsed]
+      VALUES ($1, $2, $3, $4, $5, $6) RETURNING *`,
+    [conversationId, role, content, JSON.stringify(metadata), tokensUsed, modelUsed],
   );
   return rows[0];
 };
@@ -265,7 +269,7 @@ const addMessage = async (conversationId, role, content, metadata = {}, tokensUs
 const updateConversationTitle = async (conversationId, userId, title) => {
   const { rows } = await query(
     'UPDATE ai_chat_conversations SET title = $1 WHERE id = $2 AND user_id = $3 RETURNING *',
-    [title, conversationId, userId]
+    [title, conversationId, userId],
   );
   return rows[0];
 };
@@ -273,7 +277,7 @@ const updateConversationTitle = async (conversationId, userId, title) => {
 const deleteConversation = async (conversationId, userId) => {
   const { rows } = await query(
     'DELETE FROM ai_chat_conversations WHERE id = $1 AND user_id = $2 RETURNING *',
-    [conversationId, userId]
+    [conversationId, userId],
   );
   return rows[0];
 };
@@ -285,7 +289,7 @@ const generateConversationTitle = (firstMessage) => {
   if (firstMessage.length > title.length) {
     title += '...';
   }
-  return title.length > 50 ? title.substring(0, 47) + '...' : title;
+  return title.length > 50 ? `${title.substring(0, 47)}...` : title;
 };
 
 // Fallback responses
@@ -319,7 +323,7 @@ const generateFallbackResponse = (message, context = {}) => {
 };
 
 // Statistics tracking
-let statistics = {
+const statistics = {
   totalRequests: 0,
   successfulRequests: 0,
   failedRequests: 0,
@@ -365,7 +369,7 @@ router.post('/conversations', async (req, res) => {
 
     res.json({
       conversation,
-      message: 'Conversation created successfully'
+      message: 'Conversation created successfully',
     });
   } catch (error) {
     console.error('❌ Error creating conversation:', error);
@@ -385,7 +389,7 @@ router.get('/conversations', async (req, res) => {
 
     res.json({
       conversations,
-      count: conversations.length
+      count: conversations.length,
     });
   } catch (error) {
     console.error('❌ Error fetching conversations:', error);
@@ -411,7 +415,7 @@ router.get('/conversations/:id', async (req, res) => {
 
     res.json({
       conversation,
-      messages
+      messages,
     });
   } catch (error) {
     console.error('❌ Error fetching conversation:', error);
@@ -442,7 +446,7 @@ router.put('/conversations/:id', async (req, res) => {
 
     res.json({
       conversation,
-      message: 'Conversation title updated successfully'
+      message: 'Conversation title updated successfully',
     });
   } catch (error) {
     console.error('❌ Error updating conversation:', error);
@@ -466,7 +470,7 @@ router.delete('/conversations/:id', async (req, res) => {
     }
 
     res.json({
-      message: 'Conversation deleted successfully'
+      message: 'Conversation deleted successfully',
     });
   } catch (error) {
     console.error('❌ Error deleting conversation:', error);
@@ -547,21 +551,21 @@ router.post('/chat', aiRateLimit, async (req, res) => {
     let success = true;
 
     try {
-      // Get response from DeepSeek R1 with conversation history
-      console.log('🚀 Attempting DeepSeek R1 API call with conversation context...');
+      // Get response from DeepSeek with conversation history
+      console.log('🚀 Attempting DeepSeek API call with conversation context...');
       const deepseekResponse = await deepseekClient.generateResponse(message, conversationHistory, userContext);
 
       aiResponse = deepseekResponse.content;
       responseMetadata = {
         model: deepseekResponse.model,
         usage: deepseekResponse.usage,
-        source: 'deepseek-r1',
+        source: 'deepseek-api', // Changed source to reflect direct DeepSeek usage
         timestamp: deepseekResponse.timestamp,
       };
 
-      console.log('✅ DeepSeek R1 response successful');
+      console.log('✅ DeepSeek response successful');
     } catch (apiError) {
-      console.warn('⚠️ DeepSeek R1 API failed, using fallback response');
+      console.warn('⚠️ DeepSeek API failed, using fallback response');
       console.warn('🔍 Error details:', apiError.message);
 
       success = false;
@@ -575,12 +579,12 @@ router.post('/chat', aiRateLimit, async (req, res) => {
 
     // Add AI response to database
     await addMessage(
-      conversation.id, 
-      'assistant', 
-      aiResponse, 
+      conversation.id,
+      'assistant',
+      aiResponse,
       responseMetadata,
       responseMetadata.usage?.total_tokens || 0,
-      responseMetadata.model || 'fallback'
+      responseMetadata.model || 'fallback',
     );
 
     // Calculate response time
@@ -607,7 +611,7 @@ router.post('/chat', aiRateLimit, async (req, res) => {
       metadata: responseMetadata,
       context: {
         category: 'physics',
-        model: responseMetadata.source === 'deepseek-r1' ? 'DeepSeek R1' : 'Local Fallback',
+        model: responseMetadata.source === 'deepseek-api' ? 'DeepSeek' : 'Local Fallback', // Changed model name
         topic,
       },
     });
@@ -628,7 +632,7 @@ router.post('/chat', aiRateLimit, async (req, res) => {
   }
 });
 
-// Topic detection helper
+// Topic detection helper (no changes needed)
 const detectTopic = (message) => {
   const lowerMessage = message.toLowerCase();
 
@@ -651,8 +655,8 @@ router.get('/health', async (req, res) => {
       status: 'ok',
       timestamp: new Date().toISOString(),
       config: {
-        model: OPENROUTER_CONFIG.model,
-        apiConfigured: !!OPENROUTER_CONFIG.apiKey,
+        model: DEEPSEEK_CONFIG.model, // Changed config reference
+        apiConfigured: !!DEEPSEEK_CONFIG.apiKey, // Changed config reference
         rateLimitEnabled: true,
         maxMessageLength: parseInt(process.env.AI_ASSISTANT_MAX_MESSAGE_LENGTH) || 2000,
       },
@@ -679,9 +683,9 @@ router.get('/health', async (req, res) => {
 // Other existing endpoints (test, model-info, usage, etc.) remain the same...
 router.get('/model-info', (req, res) => {
   res.json({
-    model: OPENROUTER_CONFIG.model,
-    provider: 'OpenRouter',
-    description: 'DeepSeek R1 - Advanced reasoning AI model for physics and mathematics',
+    model: DEEPSEEK_CONFIG.model, // Changed config reference
+    provider: 'DeepSeek', // Changed provider
+    description: 'DeepSeek - Advanced reasoning AI model for physics and mathematics',
     capabilities: [
       'Advanced physics reasoning',
       'Mathematical problem solving',
@@ -693,8 +697,8 @@ router.get('/model-info', (req, res) => {
       'Particle physics understanding',
       'Conversation memory and context',
     ],
-    configured: !!OPENROUTER_CONFIG.apiKey,
-    status: OPENROUTER_CONFIG.apiKey ? 'active' : 'inactive',
+    configured: !!DEEPSEEK_CONFIG.apiKey, // Changed config reference
+    status: DEEPSEEK_CONFIG.apiKey ? 'active' : 'inactive', // Changed config reference
   });
 });
 
