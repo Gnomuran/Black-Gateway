@@ -15,7 +15,7 @@
             <div class="q-pa-xl">
               <h1 class="text-h2 text-accent q-mb-md">Black Gateway</h1>
               <p class="text-h5 text-white q-mb-xl">
-                Deine personalisierte Lernplattform mit NASA-Integration
+                Deine Info und Diskurs Platform mit NASA-Integration
               </p>
               
               <!-- Eingeloggte Benutzer - Personalisierte Begrüßung -->
