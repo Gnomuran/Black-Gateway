@@ -2,12 +2,15 @@
   <div class="three-background-container">
     <!-- Three.js Hintergrund -->
     <div class="three-background">
-      <Blackhole-MainSite />
+      <Blackhole-MainSite
+      :primaryColor=" [0.5, 0.6, 0.8]"
+        :secondaryColor="[1.0, 0.73, 0.55]"
+        :low-performance-mode="true"
+      />
     </div>
-    
+
     <!-- Overlay Content -->
     <div class="overlay-content">
-      
       <!-- Hero Section -->
       <q-section class="hero-section">
         <div class="row justify-center">
@@ -17,57 +20,60 @@
               <p class="text-h5 text-white q-mb-xl">
                 Deine Info und Diskurs Platform mit NASA-Integration
               </p>
-              
+
               <!-- Eingeloggte Benutzer - Personalisierte Begrüßung -->
               <div v-if="isLoggedIn" class="logged-in-section">
                 <q-card class="welcome-card" dark>
                   <q-card-section class="text-center">
                     <!-- NASA APOD Avatar oder Fallback -->
                     <div class="nasa-avatar-container q-mb-md">
-                      <q-avatar 
-                        size="120px" 
+                      <q-avatar
+                        size="120px"
                         class="nasa-avatar"
                         :class="{ 'loading-avatar': loadingUserApod }"
                       >
                         <!-- Zeige User APOD wenn verfügbar -->
-                        <img 
-                          v-if="userApodImage && !loadingUserApod" 
-                          :src="userApodImage" 
+                        <img
+                          v-if="userApodImage && !loadingUserApod"
+                          :src="userApodImage"
                           :alt="userApodInfo?.title || 'NASA APOD'"
                           class="apod-image"
                         />
                         <!-- Loading Spinner -->
-                        <q-spinner-dots 
-                          v-else-if="loadingUserApod" 
-                          color="accent" 
-                          size="40px" 
+                        <q-spinner-dots
+                          v-else-if="loadingUserApod"
+                          color="accent"
+                          size="40px"
                         />
                         <!-- Fallback Icon -->
-                        <q-icon 
-                          v-else 
-                          name="mdi-telescope" 
-                          size="60px" 
-                          color="accent" 
+                        <q-icon
+                          v-else
+                          name="mdi-telescope"
+                          size="60px"
+                          color="accent"
                         />
                       </q-avatar>
-                      
+
                       <!-- NASA Badge -->
-                      <q-badge 
+                      <q-badge
                         v-if="userApodImage && !loadingUserApod"
-                        color="accent" 
-                        text-color="dark" 
+                        color="accent"
+                        text-color="dark"
                         class="nasa-badge"
                       >
                         NASA APOD
                       </q-badge>
                     </div>
-                    
+
                     <div class="text-h4 text-white q-mb-sm">
                       Willkommen zurück, {{ currentUser?.username }}!
                     </div>
-                    
+
                     <!-- NASA APOD Info -->
-                    <div v-if="userApodInfo && !loadingUserApod" class="nasa-info q-mb-md">
+                    <div
+                      v-if="userApodInfo && !loadingUserApod"
+                      class="nasa-info q-mb-md"
+                    >
                       <div class="text-subtitle1 text-accent q-mb-xs">
                         "{{ userApodInfo.title }}"
                       </div>
@@ -75,11 +81,14 @@
                         Dein NASA-Bild vom {{ nasaStore.formattedApodDate }}
                       </div>
                     </div>
-                    
-                    <div v-if="userRegistrationInfo && !userApodInfo" class="text-body1 text-grey-3 q-mb-md">
+
+                    <div
+                      v-if="userRegistrationInfo && !userApodInfo"
+                      class="text-body1 text-grey-3 q-mb-md"
+                    >
                       {{ userRegistrationInfo.message }}
                     </div>
-                    
+
                     <div class="row q-gutter-md justify-center q-mt-lg">
                       <q-btn
                         color="accent"
@@ -89,7 +98,7 @@
                         rounded
                         @click="goToLearning"
                       />
-                      
+
                       <q-btn
                         outline
                         color="white"
@@ -99,9 +108,9 @@
                         @click="router.push('/forum')"
                       />
                     </div>
-                    
+
                     <!-- NASA APOD Details Expandable -->
-                    <q-expansion-item 
+                    <q-expansion-item
                       v-if="userApodInfo && !loadingUserApod"
                       class="q-mt-md nasa-details"
                       icon="mdi-information"
@@ -110,22 +119,33 @@
                       dark
                     >
                       <q-card-section class="text-left q-pt-md">
-                        <div class="text-body2 text-grey-3" style="max-height: 150px; overflow-y: auto;">
+                        <div
+                          class="text-body2 text-grey-3"
+                          style="max-height: 150px; overflow-y: auto"
+                        >
                           {{ userApodInfo.explanation }}
                         </div>
-                        
-                        <div v-if="userApodInfo.copyright" class="text-caption text-grey-5 q-mt-sm">
+
+                        <div
+                          v-if="userApodInfo.copyright"
+                          class="text-caption text-grey-5 q-mt-sm"
+                        >
                           © {{ userApodInfo.copyright }}
                         </div>
-                        
+
                         <div class="text-caption text-grey-5 q-mt-xs">
-                          Medientyp: {{ userApodInfo.mediaType === 'image' ? 'Bild' : 'Video' }}
+                          Medientyp:
+                          {{
+                            userApodInfo.mediaType === "image"
+                              ? "Bild"
+                              : "Video"
+                          }}
                         </div>
                       </q-card-section>
                     </q-expansion-item>
                   </q-card-section>
                 </q-card>
-                
+
                 <div class="q-mt-lg">
                   <q-btn
                     flat
@@ -136,17 +156,23 @@
                   />
                 </div>
               </div>
-              
+
               <!-- Nicht eingeloggte Benutzer - Standard Journey Cards -->
               <div v-else>
                 <div class="row q-gutter-lg justify-center q-mb-xl">
                   <div class="col-12 col-sm-5">
                     <q-card class="journey-card" dark>
                       <q-card-section class="text-center">
-                        <q-icon name="mdi-account-plus" size="48px" color="accent" class="q-mb-md" />
+                        <q-icon
+                          name="mdi-account-plus"
+                          size="48px"
+                          color="accent"
+                          class="q-mb-md"
+                        />
                         <div class="text-h6 q-mb-sm">Neu hier?</div>
                         <p class="text-body2 q-mb-md">
-                          Erstelle deinen Account und erhalte dein persönliches NASA-Bild
+                          Erstelle deinen Account und erhalte dein persönliches
+                          NASA-Bild
                         </p>
                         <q-btn
                           color="accent"
@@ -162,11 +188,16 @@
                       </q-card-section>
                     </q-card>
                   </div>
-                  
+
                   <div class="col-12 col-sm-5">
                     <q-card class="journey-card" dark bordered>
                       <q-card-section class="text-center">
-                        <q-icon name="mdi-account-check" size="48px" color="info" class="q-mb-md" />
+                        <q-icon
+                          name="mdi-account-check"
+                          size="48px"
+                          color="info"
+                          class="q-mb-md"
+                        />
                         <div class="text-h6 q-mb-sm">Bereits dabei?</div>
                         <p class="text-body2 q-mb-md">
                           Melde dich an und setze deine Lernreise fort
@@ -185,7 +216,7 @@
                     </q-card>
                   </div>
                 </div>
-                
+
                 <!-- Preview Button -->
                 <q-btn
                   flat
@@ -207,64 +238,85 @@
             <h2 class="text-h3 text-center text-white q-mb-xl">
               So sieht deine Lernerfahrung aus
             </h2>
-            
+
             <div class="row q-gutter-lg">
               <div class="col-12 col-md-4">
                 <q-card class="demo-card" dark>
                   <q-card-section>
                     <div class="row items-center no-wrap">
-                      <q-icon name="mdi-account-star" size="32px" color="accent" />
+                      <q-icon
+                        name="mdi-account-star"
+                        size="32px"
+                        color="accent"
+                      />
                       <div class="col q-ml-md">
                         <div class="text-h6">NASA-Profil</div>
                       </div>
                     </div>
                   </q-card-section>
-                  
+
                   <q-card-section class="q-pt-none">
                     <q-item dark class="q-pa-none">
                       <q-item-section avatar>
-                        <q-avatar 
-                          v-if="isLoggedIn && userApodImage" 
+                        <q-avatar
+                          v-if="isLoggedIn && userApodImage"
                           size="40px"
                         >
-                          <img :src="userApodImage" alt="User NASA APOD" class="apod-image" />
+                          <img
+                            :src="userApodImage"
+                            alt="User NASA APOD"
+                            class="apod-image"
+                          />
                         </q-avatar>
-                        <q-avatar 
-                          v-else 
-                          color="accent" 
-                          text-color="dark" 
-                          icon="mdi-telescope" 
+                        <q-avatar
+                          v-else
+                          color="accent"
+                          text-color="dark"
+                          icon="mdi-telescope"
                           size="40px"
                         />
                       </q-item-section>
                       <q-item-section>
                         <q-item-label class="text-white">
-                          {{ isLoggedIn ? currentUser?.username || 'Dein Username' : 'Dein Username' }}
+                          {{
+                            isLoggedIn
+                              ? currentUser?.username || "Dein Username"
+                              : "Dein Username"
+                          }}
                         </q-item-label>
                         <q-item-label caption>
-                          {{ isLoggedIn && userApodInfo ? userApodInfo.title : 'NASA-Bild vom Registrierungstag' }}
+                          {{
+                            isLoggedIn && userApodInfo
+                              ? userApodInfo.title
+                              : "NASA-Bild vom Registrierungstag"
+                          }}
                         </q-item-label>
                       </q-item-section>
                     </q-item>
-                    
+
                     <p class="text-body2 q-mt-md">
-                      Erhalte dein einzigartiges NASA Astronomie-Bild als Profilbild
+                      Erhalte dein einzigartiges NASA Astronomie-Bild als
+                      Profilbild
                     </p>
                   </q-card-section>
                 </q-card>
               </div>
-              
+
               <div class="col-12 col-md-4">
                 <q-card class="demo-card" dark>
                   <q-card-section>
                     <div class="row items-center no-wrap">
-                      <q-icon name="mdi-book-multiple" size="32px" color="info" />
+                      <q-icon
+                        name="mdi-book-multiple"
+                        size="32px"
+                        color="info"
+                      />
                       <div class="col q-ml-md">
                         <div class="text-h6">Lernmodule</div>
                       </div>
                     </div>
                   </q-card-section>
-                  
+
                   <q-card-section class="q-pt-none">
                     <q-list dark>
                       <q-item>
@@ -275,7 +327,7 @@
                           <q-item-label>Modul 1 - Abgeschlossen</q-item-label>
                         </q-item-section>
                       </q-item>
-                      
+
                       <q-item>
                         <q-item-section avatar>
                           <q-icon name="mdi-play-circle" color="accent" />
@@ -284,7 +336,7 @@
                           <q-item-label>Modul 2 - Aktiv</q-item-label>
                         </q-item-section>
                       </q-item>
-                      
+
                       <q-item>
                         <q-item-section avatar>
                           <q-icon name="mdi-circle-outline" color="grey" />
@@ -294,14 +346,15 @@
                         </q-item-section>
                       </q-item>
                     </q-list>
-                    
+
                     <p class="text-body2 q-mt-md">
-                      Strukturierte Lerninhalte mit automatischer Fortschrittsverfolgung
+                      Strukturierte Lerninhalte mit automatischer
+                      Fortschrittsverfolgung
                     </p>
                   </q-card-section>
                 </q-card>
               </div>
-              
+
               <div class="col-12 col-md-4">
                 <q-card class="demo-card" dark>
                   <q-card-section>
@@ -312,7 +365,7 @@
                       </div>
                     </div>
                   </q-card-section>
-                  
+
                   <q-card-section class="q-pt-none">
                     <q-chip
                       v-for="topic in forumTopics"
@@ -322,7 +375,7 @@
                       text-color="white"
                       class="q-ma-xs"
                     />
-                    
+
                     <p class="text-body2 q-mt-md">
                       Tausche dich mit anderen Lernenden aus und stelle Fragen
                     </p>
@@ -341,7 +394,7 @@
             <h2 class="text-h3 text-center text-white q-mb-xl">
               3 Schritte zu deinem Lernerfolg
             </h2>
-            
+
             <q-timeline color="accent" class="q-mb-xl">
               <q-timeline-entry
                 v-for="(step, index) in steps"
@@ -357,7 +410,7 @@
                 </div>
               </q-timeline-entry>
             </q-timeline>
-            
+
             <div class="text-center">
               <q-btn
                 v-if="!isLoggedIn"
@@ -371,7 +424,7 @@
                 @click="goToRegister"
                 class="q-px-xl"
               />
-              
+
               <q-btn
                 v-else
                 color="accent"
@@ -394,7 +447,7 @@
         <div class="row justify-center">
           <div class="col-12 col-lg-8">
             <h2 class="text-h3 text-center text-white q-mb-xl">FAQ</h2>
-            
+
             <q-list>
               <q-expansion-item
                 v-for="(faq, index) in faqs"
@@ -414,17 +467,16 @@
           </div>
         </div>
       </q-section>
-      
     </div>
   </div>
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue';
-import { useRouter } from 'vue-router';
-import { useAuthStore } from '../stores/auth';
-import { useNasaStore } from '../stores/nasa';
-import BlackholeMainSite from '@/components/Blackhole-MainSite.vue';
+import { ref, computed, onMounted } from "vue";
+import { useRouter } from "vue-router";
+import { useAuthStore } from "../stores/auth";
+import { useNasaStore } from "../stores/nasa";
+import BlackholeMainSite from "@/components/Blackhole-MainSite.vue";
 
 const router = useRouter();
 const authStore = useAuthStore();
@@ -437,12 +489,14 @@ const loadingUserApod = ref(false);
 // Computed für Auth-Status
 const isLoggedIn = computed(() => authStore.isAuthenticated);
 const currentUser = computed(() => authStore.user);
-const userRegistrationInfo = computed(() => authStore.getUserRegistrationInfo());
+const userRegistrationInfo = computed(() =>
+  authStore.getUserRegistrationInfo()
+);
 
 // Computed für NASA User APOD
 const userApodImage = computed(() => {
-  return nasaStore.apodImageUrl && nasaStore.isCurrentApodUserSpecific 
-    ? nasaStore.apodImageUrl 
+  return nasaStore.apodImageUrl && nasaStore.isCurrentApodUserSpecific
+    ? nasaStore.apodImageUrl
     : null;
 });
 
@@ -453,7 +507,7 @@ const userApodInfo = computed(() => {
 // Session und User APOD beim Component-Load prüfen
 onMounted(async () => {
   await authStore.checkSession();
-  
+
   // Wenn User eingeloggt ist, lade sein Registration-APOD
   if (authStore.isAuthenticated && authStore.hasUserCreationDate()) {
     await loadUserApod();
@@ -465,93 +519,97 @@ const loadUserApod = async () => {
   try {
     loadingUserApod.value = true;
     const userNasaDate = authStore.getUserCreationDateForNasa();
-    
+
     if (userNasaDate) {
-      console.log('Lade User APOD für Datum:', userNasaDate);
+      console.log("Lade User APOD für Datum:", userNasaDate);
       const result = await nasaStore.fetchUserRegistrationAPOD(userNasaDate);
-      
+
       if (result.success) {
-        console.log('User APOD erfolgreich geladen:', result.title);
+        console.log("User APOD erfolgreich geladen:", result.title);
       } else {
-        console.warn('Fallback APOD verwendet:', result.error);
+        console.warn("Fallback APOD verwendet:", result.error);
       }
     }
   } catch (error) {
-    console.error('Fehler beim Laden des User APOD:', error);
+    console.error("Fehler beim Laden des User APOD:", error);
   } finally {
     loadingUserApod.value = false;
   }
 };
 
 // Data
-const forumTopics = ['Astrophysik', 'Raumfahrt', 'Planeten', 'Galaxien'];
+const forumTopics = ["Astrophysik", "Raumfahrt", "Planeten", "Galaxien"];
 
 const steps = [
   {
-    icon: 'mdi-account-plus',
-    color: 'accent',
-    title: 'Account erstellen',
-    description: 'Registriere dich kostenlos und erhalte sofort dein persönliches NASA-Bild als Profilbild'
+    icon: "mdi-account-plus",
+    color: "accent",
+    title: "Account erstellen",
+    description:
+      "Registriere dich kostenlos und erhalte sofort dein persönliches NASA-Bild als Profilbild",
   },
   {
-    icon: 'mdi-play-circle',
-    color: 'info',
-    title: 'Lernmodule starten',
-    description: 'Wähle interessante Themen aus und beginne mit dem ersten Lernmodul - in deinem eigenen Tempo'
+    icon: "mdi-play-circle",
+    color: "info",
+    title: "Lernmodule starten",
+    description:
+      "Wähle interessante Themen aus und beginne mit dem ersten Lernmodul - in deinem eigenen Tempo",
   },
   {
-    icon: 'mdi-trophy',
-    color: 'positive',
-    title: 'Fortschritt verfolgen',
-    description: 'Schließe Module ab, sammle Erfolge und tausche dich im Forum mit anderen Lernenden aus'
-  }
+    icon: "mdi-trophy",
+    color: "positive",
+    title: "Fortschritt verfolgen",
+    description:
+      "Schließe Module ab, sammle Erfolge und tausche dich im Forum mit anderen Lernenden aus",
+  },
 ];
 
 const faqs = [
   {
-    question: 'Was ist das NASA-Bild genau?',
-    answer: 'Du erhältst das offizielle NASA "Astronomy Picture of the Day" von dem Tag, an dem du dich registriert hast. Das wird dein einzigartiges Profilbild.'
+    question: "Was ist das NASA-Bild genau?",
+    answer:
+      'Du erhältst das offizielle NASA "Astronomy Picture of the Day" von dem Tag, an dem du dich registriert hast. Das wird dein einzigartiges Profilbild.',
   },
   {
-    question: 'Wie funktioniert das Lernen hier?',
-    answer: 'Du arbeitest dich durch strukturierte Module mit Texten, Bildern und interaktiven Inhalten. Dein Fortschritt wird automatisch gespeichert.'
+    question: "Wie funktioniert das Lernen hier?",
+    answer:
+      "Du arbeitest dich durch strukturierte Module mit Texten, Bildern und interaktiven Inhalten. Dein Fortschritt wird automatisch gespeichert.",
   },
   {
-    question: 'Kann ich mit anderen Nutzern interagieren?',
-    answer: 'Ja! Im integrierten Diskurs-Forum kannst du Fragen stellen, Diskussionen führen und dich mit anderen Lernenden austauschen.'
-  }
+    question: "Kann ich mit anderen Nutzern interagieren?",
+    answer:
+      "Ja! Im integrierten Diskurs-Forum kannst du Fragen stellen, Diskussionen führen und dich mit anderen Lernenden austauschen.",
+  },
 ];
 
 // Methods
 const goToRegister = () => {
-  router.push('/register');
+  router.push("/register");
 };
 
 const goToLogin = () => {
-  router.push('/login');
+  router.push("/login");
 };
 
 const goToLearning = () => {
-  router.push('/kurse'); // oder dashboard oder der Hauptlernbereich
+  router.push("/kurse"); // oder dashboard oder der Hauptlernbereich
 };
-
-
 
 const handleLogout = async () => {
   try {
     await authStore.logout();
     // Nach dem Logout zur Startseite oder Login-Seite weiterleiten
-    router.push('/');
+    router.push("/");
   } catch (error) {
-    console.error('Logout-Fehler:', error);
+    console.error("Logout-Fehler:", error);
   }
 };
 
 const scrollToPreview = () => {
   if (previewSection.value) {
-    previewSection.value.$el.scrollIntoView({ 
-      behavior: 'smooth',
-      block: 'start'
+    previewSection.value.$el.scrollIntoView({
+      behavior: "smooth",
+      block: "start",
     });
   }
 };
@@ -958,22 +1016,22 @@ const scrollToPreview = () => {
   .faq-section {
     padding: 2rem 1rem;
   }
-  
+
   .main-navigation {
     max-width: 95%;
   }
-  
+
   .uniform-btn {
     min-width: 120px;
     min-height: 45px;
     font-size: 0.9rem;
     padding: 10px 12px;
   }
-  
+
   .uniform-btn .q-icon {
     font-size: 18px;
   }
-  
+
   .quick-access-section {
     max-width: 250px;
   }
@@ -984,28 +1042,36 @@ const scrollToPreview = () => {
     max-width: 95%;
     margin: 0 auto;
   }
-  
+
   .main-navigation {
     padding: 0 0.5rem;
   }
-  
+
   .uniform-btn {
     min-width: 100px;
     min-height: 42px;
     font-size: 0.85rem;
     padding: 8px 10px;
   }
-  
+
   .uniform-btn .q-icon {
     font-size: 16px;
   }
-  
+
   .quick-access-section {
     max-width: 220px;
   }
-  
+
   .quick-btn {
     font-size: 0.8rem;
   }
+}
+
+.hero-section, 
+.preview-section, 
+.steps-section, 
+.faq-section {
+  padding: 6rem 0; 
+  margin-bottom: 2rem;
 }
 </style>
