@@ -1,7 +1,7 @@
 <template>
   <div class="blackhole-container">
-    <canvas 
-      ref="blackholeCanvas" 
+    <canvas
+      ref="blackholeCanvas"
       class="blackhole-canvas"
       :style="{ opacity: isVisible ? 1 : 0 }"
     ></canvas>
@@ -145,37 +145,37 @@ export default {
     createProceduralTextures(gl) {
       // Reduzierte Textur-Größe für bessere Performance
       const textureSize = this.lowPerformanceMode ? 256 : 512;
-      
+
       const createNoiseTexture = (size) => {
         const data = new Uint8Array(size * size * 4);
         const octaves = this.lowPerformanceMode ? 4 : 6; // Weniger Oktaven für Low-Performance
-        
+
         for (let i = 0; i < size; i++) {
           for (let j = 0; j < size; j++) {
             const index = (i * size + j) * 4;
             const x = i / size;
             const y = j / size;
-            
+
             let noise = 0;
             let amplitude = 1;
             let frequency = 4;
             let maxValue = 0;
-            
+
             for (let octave = 0; octave < octaves; octave++) {
-              noise += Math.sin(x * frequency + Math.cos(y * frequency * 1.3)) * 
-                       Math.cos(y * frequency + Math.sin(x * frequency * 0.7)) * amplitude;
-              
+              noise += Math.sin(x * frequency + Math.cos(y * frequency * 1.3)) *
+                               Math.cos(y * frequency + Math.sin(x * frequency * 0.7)) * amplitude;
+
               maxValue += amplitude;
               amplitude *= 0.5;
               frequency *= 2.1;
             }
-            
+
             noise = (noise / maxValue + 1) * 0.5;
             const turbulence = Math.sin(x * 23.7) * Math.cos(y * 19.3) * 0.1;
             noise += turbulence;
-            
+
             const value = Math.floor(Math.max(0, Math.min(1, noise)) * 255);
-            
+
             data[index] = value;
             data[index + 1] = value;
             data[index + 2] = value;
@@ -192,21 +192,21 @@ export default {
             const index = (i * size + j) * 4;
             const x = i / size;
             const y = j / size;
-            
+
             let dust = 0;
             const fiber1 = Math.sin((x + y) * 25) * Math.exp(-Math.pow((x + y - 1) * 3, 2));
             const fiber2 = Math.sin((x - y + 0.5) * 20) * Math.exp(-Math.pow((x - y) * 2, 2));
-            
+
             const angle = Math.atan2(y - 0.5, x - 0.5);
             const radius = Math.sqrt((x - 0.5) * (x - 0.5) + (y - 0.5) * (y - 0.5));
             const spiral = Math.sin(angle * 3 + radius * 15) * Math.exp(-radius * 2);
-            
+
             const particles = (Math.random() < 0.1) ? Math.random() : 0;
-            
+
             dust = fiber1 * 0.4 + fiber2 * 0.3 + spiral * 0.2 + particles * 0.1;
             dust = Math.pow(Math.abs(dust), 0.7);
             const value = Math.floor(Math.max(0, Math.min(1, dust)) * 255);
-            
+
             data[index] = value;
             data[index + 1] = value;
             data[index + 2] = value;
@@ -243,16 +243,16 @@ export default {
 
     async initBlackHole() {
       if (this.isInitialized) return;
-      
+
       const canvas = this.$refs.blackholeCanvas;
       if (!canvas) return;
-      
+
       this.gl = canvas.getContext('webgl', {
         alpha: true,
         antialias: false, // Für bessere Performance
         powerPreference: 'default' // Nicht immer high-performance GPU verwenden
       });
-      
+
       if (!this.gl) {
         console.error('WebGL wird nicht unterstützt!');
         return;
@@ -273,7 +273,7 @@ export default {
         }
       `;
 
-      // Fragment Shader mit anpassbaren Farben
+      // Fragment Shader mit deutlich schnellerer Rotation
       const fragmentShader = `
         precision ${this.lowPerformanceMode ? 'mediump' : 'highp'} float;
         uniform vec2 resolution;
@@ -284,7 +284,7 @@ export default {
         uniform vec3 secondaryColor;
 
         #define ITERATIONS ${this.lowPerformanceMode ? 50 : 100}
-        
+
         const float pi = 3.14159265;
 
         float noise( in vec3 x ) {
@@ -351,14 +351,14 @@ export default {
             float discRadius = 3.2;
             float discWidth = 5.3;
             float discInner = discRadius - discWidth * 0.5;
-            
+
             vec3 origin = vec3(0.0, 0.0, 0.0);
             vec3 discNormal = normalize(vec3(0.0, 1.0, 0.0));
             float discThickness = 0.1;
 
             float distFromCenter = distance(pos, origin);
             float distFromDisc = dot(discNormal, pos - origin);
-            
+
             float radialGradient = 1.0 - saturate((distFromCenter - discInner) / discWidth * 0.5);
             float coverage = pcurve(radialGradient, 4.0, 0.9);
 
@@ -374,48 +374,50 @@ export default {
             float fade = pow((abs(distFromCenter - discInner) + 0.4), 4.0) * 0.04;
             float bloomFactor = 1.0 / (pow(distFromDisc, 2.0) * 40.0 + fade + 0.00002);
             vec3 b = dustColorLit * pow(bloomFactor, 1.5);
-            
+
             // Farbmischung mit Primary/Secondary Colors
             b *= mix(secondaryColor * 1.7, primaryColor * vec3(0.5, 0.6, 1.0), vec3(pow(radialGradient, 2.0)));
             b *= mix(secondaryColor * vec3(1.7, 0.5, 0.1), primaryColor, vec3(pow(radialGradient, 0.5)));
 
             dustColor = mix(dustColor, b * 150.0, saturate(1.0 - coverage * 1.0));
             coverage = saturate(coverage + bloomFactor * bloomFactor * 0.1);
-            
+
             if (coverage < 0.01) {
-                return;   
+                return;
             }
-            
+
             vec3 radialCoords;
             radialCoords.x = distFromCenter * 1.5 + 0.55;
             radialCoords.y = atan2(-pos.x, -pos.z) * 1.5;
             radialCoords.z = distFromDisc * 1.5;
 
             radialCoords *= 0.95;
-            
-            float speed = 0.08;
-            
+
+            // DEUTLICH SCHNELLERE ROTATION: Von 0.08 auf 0.35 erhöht (über 4x schneller)
+            float speed = 0.35;
+
             float noise1 = 1.0;
-            vec3 rc = radialCoords + 0.0;               rc.y += time * speed;
-            noise1 *= noise(rc * 3.0) * 0.5 + 0.5;      rc.y -= time * speed;
-            noise1 *= noise(rc * 6.0) * 0.5 + 0.5;      rc.y += time * speed;
-            noise1 *= noise(rc * 12.0) * 0.5 + 0.5;     rc.y -= time * speed;
-            noise1 *= noise(rc * 24.0) * 0.5 + 0.5;     rc.y += time * speed;
+            vec3 rc = radialCoords + 0.0;           rc.y += time * speed;
+            noise1 *= noise(rc * 3.0) * 0.5 + 0.5;  rc.y -= time * speed;
+            noise1 *= noise(rc * 6.0) * 0.5 + 0.5;  rc.y += time * speed;
+            noise1 *= noise(rc * 12.0) * 0.5 + 0.5; rc.y -= time * speed;
+            noise1 *= noise(rc * 24.0) * 0.5 + 0.5; rc.y += time * speed;
 
             float noise2 = 2.0;
             rc = radialCoords + 30.0;
-            noise2 *= noise(rc * 3.0) * 0.5 + 0.5;      rc.y += time * speed;
-            noise2 *= noise(rc * 6.0) * 0.5 + 0.5;      rc.y -= time * speed;
-            noise2 *= noise(rc * 12.0) * 0.5 + 0.5;     rc.y += time * speed;
-            noise2 *= noise(rc * 24.0) * 0.5 + 0.5;     rc.y -= time * speed;
-            noise2 *= noise(rc * 48.0) * 0.5 + 0.5;     rc.y += time * speed;
-            noise2 *= noise(rc * 92.0) * 0.5 + 0.5;     rc.y -= time * speed;
+            noise2 *= noise(rc * 3.0) * 0.5 + 0.5;  rc.y += time * speed;
+            noise2 *= noise(rc * 6.0) * 0.5 + 0.5;  rc.y -= time * speed;
+            noise2 *= noise(rc * 12.0) * 0.5 + 0.5; rc.y += time * speed;
+            noise2 *= noise(rc * 24.0) * 0.5 + 0.5; rc.y -= time * speed;
+            noise2 *= noise(rc * 48.0) * 0.5 + 0.5; rc.y += time * speed;
+            noise2 *= noise(rc * 92.0) * 0.5 + 0.5; rc.y -= time * speed;
 
             dustColor *= noise1 * 0.998 + 0.002;
             coverage *= noise2;
-            
-            radialCoords.y += time * speed * 0.5;
-            
+
+            // Hier wird auch die Geschwindigkeit für die Textur-Rotation erhöht
+            radialCoords.y += time * speed * 0.8; // Von 0.5 auf 0.8 erhöht
+
             dustColor *= pow(texture2D(iChannel1, radialCoords.yx * vec2(0.15, 0.27)).rgb, vec3(2.0)) * 4.0;
 
             coverage = saturate(coverage * 1200.0 / float(ITERATIONS));
@@ -427,6 +429,7 @@ export default {
             alpha = (1.0 - alpha) * coverage + alpha;
         }
 
+        // Re-enabled the rotate function for camera orientation
         vec3 rotate(vec3 p, float x, float y, float z) {
             mat3 matx = mat3(1.0, 0.0, 0.0,
                              0.0, cos(x), sin(x),
@@ -443,16 +446,6 @@ export default {
             return maty * matz * matx * p;
         }
 
-        void RotateCamera(inout vec3 eyevec, inout vec3 eyepos, vec2 mousePos) {
-            float mousePosY = mousePos.y;
-            float mousePosX = mousePos.x;
-
-            vec3 angle = vec3(mousePosY * 0.05 + 0.05, 1.0 + mousePosX * 1.0, -0.45);
-
-            eyevec = rotate(eyevec, angle.x, angle.y, angle.z);
-            eyepos = rotate(eyepos, angle.x, angle.y, angle.z);
-        }
-
         void WarpSpace(inout vec3 eyevec, inout vec3 raypos) {
             vec3 origin = vec3(0.0, 0.0, 0.0);
             float singularityDist = distance(raypos, origin);
@@ -465,50 +458,57 @@ export default {
         void main() {
             vec2 uv = gl_FragCoord.xy / resolution.xy;
             float aspect = resolution.x / resolution.y;
-            
-            vec2 mousePos = vec2(
-                0.35 + sin(time * 0.08) * 0.3,
-                0.5 + cos(time * 0.06) * 0.15
-            );
-            
+
+            // Introduce a subtle time-based offset for the camera to simulate movement
+            // This makes the black hole appear to drift slightly
+            vec2 timeOffset = vec2(sin(time * 0.04) * 0.2, cos(time * 0.06) * 0.1);
+
+            // Initial camera position.
+            // Negative X shifts the black hole to the right of the view.
+            // Positive Y lifts the camera, giving a slightly elevated perspective.
+            // Negative Z moves the camera back.
+            vec3 eyepos = vec3(-1.4 + timeOffset.x, 0.2 + timeOffset.y, -10.0);
+
             vec3 eyevec = normalize(vec3((uv * 2.0 - 1.0) * vec2(aspect, 1.0), 6.0));
-            vec3 eyepos = vec3(0.0, -0.0, -10.0);
-            
-            eyepos.x += mousePos.x * 3.0 - 1.5;
-            
+
             const float far = 15.0;
 
-            RotateCamera(eyevec, eyepos, mousePos);
+            // Apply a fixed rotation for an interesting perspective
+            // These angles define the camera's fixed orientation relative to the black hole.
+            // Adjust these values (x, y, z) to fine-tune the perspective.
+            vec3 fixedPerspectiveAngle = vec3(0.1, 1.0, -0.2); // Pitch, Yaw, Roll
+            eyevec = rotate(eyevec, fixedPerspectiveAngle.x, fixedPerspectiveAngle.y, fixedPerspectiveAngle.z);
+            eyepos = rotate(eyepos, fixedPerspectiveAngle.x, fixedPerspectiveAngle.y, fixedPerspectiveAngle.z);
 
             vec3 color = vec3(0.0, 0.0, 0.0);
-            
+
             float dither = rand(uv + sin(time * 1.0)) * 2.0;
 
             float alpha = 0.0;
             vec3 raypos = eyepos + eyevec * dither * far / float(ITERATIONS);
-            
-            for (int i = 0; i < ITERATIONS; i++) {        
+
+            for (int i = 0; i < ITERATIONS; i++) {
                 WarpSpace(eyevec, raypos);
                 raypos += eyevec * far / float(ITERATIONS);
                 GasDisc(color, alpha, raypos);
                 Haze(color, raypos, alpha);
             }
-            
+
             color *= 0.0001;
 
             color += color * 0.5;
             color *= 500.0;
-            
+
             color = pow(color, vec3(1.5));
             color = color / (1.0 + color);
             color = pow(color, vec3(1.0 / 1.5));
-            
+
             color = mix(color, color * color * (3.0 - 2.0 * color), vec3(1.0));
-            color = pow(color, vec3(1.3, 1.20, 1.0));    
+            color = pow(color, vec3(1.3, 1.20, 1.0));
             color = saturate(color * 1.01);
-            
+
             color = pow(color, vec3(0.7 / 2.2));
-            
+
             gl_FragColor = vec4(color, 1.0);
         }
       `;
@@ -520,15 +520,15 @@ export default {
         console.error('Failed to create shader program');
         return;
       }
-      
+
       this.gl.useProgram(this.shaderProgram);
 
       // Vertex-Buffer
       const positionBuffer = this.gl.createBuffer();
       this.gl.bindBuffer(this.gl.ARRAY_BUFFER, positionBuffer);
-      this.gl.bufferData(this.gl.ARRAY_BUFFER, 
+      this.gl.bufferData(this.gl.ARRAY_BUFFER,
         new Float32Array([-1, -1, 1, -1, -1, 1, 1, 1]), this.gl.STATIC_DRAW);
-      
+
       const positionAttr = this.gl.getAttribLocation(this.shaderProgram, 'position');
       if (positionAttr !== -1) {
         this.gl.enableVertexAttribArray(positionAttr);
@@ -540,7 +540,7 @@ export default {
       this.timeLoc = this.gl.getUniformLocation(this.shaderProgram, 'time');
       this.primaryColorLoc = this.gl.getUniformLocation(this.shaderProgram, 'primaryColor');
       this.secondaryColorLoc = this.gl.getUniformLocation(this.shaderProgram, 'secondaryColor');
-      
+
       const channel0Loc = this.gl.getUniformLocation(this.shaderProgram, 'iChannel0');
       const channel1Loc = this.gl.getUniformLocation(this.shaderProgram, 'iChannel1');
 
@@ -557,9 +557,9 @@ export default {
 
       this.startTime = Date.now();
       this.isInitialized = true;
-      
+
       console.log('🌌 Black hole renderer initialized successfully!');
-      
+
       if (this.autoPlay && this.isVisible) {
         this.animate();
       }
@@ -567,18 +567,18 @@ export default {
 
     animate() {
       if (this.isPaused || !this.isInitialized) return;
-      
+
       if (this.resolutionLoc !== -1) {
         this.gl.uniform2f(this.resolutionLoc, this.$refs.blackholeCanvas.width, this.$refs.blackholeCanvas.height);
       }
       if (this.timeLoc !== -1) {
         this.gl.uniform1f(this.timeLoc, (Date.now() - this.startTime) / 1000);
       }
-      
+
       this.gl.clearColor(0.0, 0.0, 0.0, 1.0);
       this.gl.clear(this.gl.COLOR_BUFFER_BIT);
       this.gl.drawArrays(this.gl.TRIANGLE_STRIP, 0, 4);
-      
+
       this.animationId = requestAnimationFrame(() => this.animate());
     },
 
@@ -607,12 +607,13 @@ export default {
 
 <style scoped>
 .blackhole-container {
-  position: absolute;
+  /* Ensures it stays relative to the viewport */
   top: 0;
-  left: 0;
-  width: 100%;
+  right: 0; /* Positions the container to the right edge of the window */
+ /* Sets the width to half of the screen */
   height: 100%;
   overflow: hidden;
+  pointer-events: none; /* Allows mouse events to pass through the canvas to elements behind it */
 }
 
 .blackhole-canvas {

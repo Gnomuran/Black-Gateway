@@ -231,7 +231,7 @@
         </div>
       </q-section>
 
-      <!-- Preview Section -->
+      <!-- Preview Section - Responsive Design -->
       <q-section class="preview-section" ref="previewSection">
         <div class="row justify-center">
           <div class="col-12 col-lg-10">
@@ -239,9 +239,10 @@
               So sieht deine Lernerfahrung aus
             </h2>
 
-            <div class="row q-gutter-lg">
-              <div class="col-12 col-md-4">
-                <q-card class="demo-card" dark>
+            <!-- Desktop: Row Layout -->
+            <div class="row q-gutter-lg gt-sm">
+              <div class="col">
+                <q-card class="demo-card full-height" dark>
                   <q-card-section>
                     <div class="row items-center no-wrap">
                       <q-icon
@@ -302,8 +303,8 @@
                 </q-card>
               </div>
 
-              <div class="col-12 col-md-4">
-                <q-card class="demo-card" dark>
+              <div class="col">
+                <q-card class="demo-card full-height" dark>
                   <q-card-section>
                     <div class="row items-center no-wrap">
                       <q-icon
@@ -336,15 +337,6 @@
                           <q-item-label>Modul 2 - Aktiv</q-item-label>
                         </q-item-section>
                       </q-item>
-
-                      <q-item>
-                        <q-item-section avatar>
-                          <q-icon name="mdi-circle-outline" color="grey" />
-                        </q-item-section>
-                        <q-item-section>
-                          <q-item-label>Modul 3 - Gesperrt</q-item-label>
-                        </q-item-section>
-                      </q-item>
                     </q-list>
 
                     <p class="text-body2 q-mt-md">
@@ -355,8 +347,8 @@
                 </q-card>
               </div>
 
-              <div class="col-12 col-md-4">
-                <q-card class="demo-card" dark>
+              <div class="col">
+                <q-card class="demo-card full-height" dark>
                   <q-card-section>
                     <div class="row items-center no-wrap">
                       <q-icon name="mdi-forum" size="32px" color="positive" />
@@ -383,6 +375,7 @@
                 </q-card>
               </div>
             </div>
+
           </div>
         </div>
       </q-section>
@@ -485,6 +478,7 @@ const nasaStore = useNasaStore();
 // Refs
 const previewSection = ref(null);
 const loadingUserApod = ref(false);
+const previewSlide = ref('nasa-profile');
 
 // Computed für Auth-Status
 const isLoggedIn = computed(() => authStore.isAuthenticated);
@@ -638,26 +632,26 @@ const scrollToPreview = () => {
   width: 100%;
 }
 
-/* Section Backgrounds */
+/* Section Backgrounds - Updated with No Background for Hero & Steps */
 .hero-section {
   min-height: 100vh;
-  background: rgba(0, 0, 0, 0.2);
-  backdrop-filter: blur(5px);
   display: flex;
   align-items: center;
 }
 
+/* Section Background Styles */
 .preview-section {
   min-height: 100vh;
-  background: rgba(0, 0, 0, 0.4);
-  backdrop-filter: blur(10px);
+  background: rgba(0, 0, 0, 0.4) !important;
+  backdrop-filter: blur(8px) !important;
+  -webkit-backdrop-filter: blur(8px) !important;
+  border: 1px solid rgba(255, 255, 255, 0.1);
   padding: 4rem 0;
+  margin: 5rem;
 }
 
 .steps-section {
   min-height: 100vh;
-  background: rgba(255, 185, 141, 0.05);
-  backdrop-filter: blur(10px);
   padding: 4rem 0;
   display: flex;
   align-items: center;
@@ -665,8 +659,10 @@ const scrollToPreview = () => {
 
 .faq-section {
   min-height: 80vh;
-  background: rgba(0, 0, 0, 0.6);
-  backdrop-filter: blur(10px);
+  background: rgba(0, 0, 0, 0.5) !important;
+  backdrop-filter: blur(10px) !important;
+  -webkit-backdrop-filter: blur(10px) !important;
+  border: 1px solid rgba(255, 255, 255, 0.1);
   padding: 4rem 0;
 }
 
@@ -729,74 +725,7 @@ const scrollToPreview = () => {
   margin-top: 1rem;
 }
 
-/* Navigation Buttons - Haupt Navigation */
-.main-navigation {
-  max-width: 600px;
-  margin: 0 auto;
-}
-
-.uniform-btn {
-  min-width: 140px;
-  min-height: 50px;
-  font-weight: 600;
-  transition: all 0.3s ease;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
-  text-transform: none;
-  white-space: normal;
-  padding: 12px 16px;
-}
-
-.uniform-btn:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
-}
-
-.uniform-btn .q-btn__content {
-  flex-direction: row;
-  gap: 8px;
-  justify-content: center;
-  align-items: center;
-}
-
-.uniform-btn .q-icon {
-  font-size: 20px;
-}
-
-/* Quick Access Navigation */
-.quick-access-section {
-  max-width: 300px;
-  margin: 0 auto;
-}
-
-.quick-access-card {
-  background: rgba(255, 255, 255, 0.05) !important;
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 12px;
-  backdrop-filter: blur(5px);
-}
-
-.quick-btn {
-  width: 100%;
-  aspect-ratio: 1;
-  transition: all 0.2s ease;
-}
-
-.quick-btn:hover {
-  transform: scale(1.1);
-  background: rgba(255, 255, 255, 0.1) !important;
-}
-
-@keyframes fadeInUp {
-  from {
-    opacity: 0;
-    transform: translateY(30px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
+/* Journey Cards */
 .journey-card {
   background: rgba(255, 255, 255, 0.1) !important;
   border: 1px solid rgba(255, 255, 255, 0.2);
@@ -808,193 +737,61 @@ const scrollToPreview = () => {
   transform: translateY(-5px);
 }
 
-.demo-card {
+/* Mobile Carousel Styles */
+.mobile-preview-carousel {
+  background: transparent;
+}
+
+.demo-card-mobile {
   background: rgba(255, 255, 255, 0.08) !important;
   border: 1px solid rgba(255, 255, 255, 0.1);
-  transition: all 0.3s ease;
-}
-
-/* Section Backgrounds */
-.hero-section {
-  min-height: 100vh;
-  background: rgba(0, 0, 0, 0.2);
-  backdrop-filter: blur(5px);
+  border-radius: 12px;
+  min-height: 300px;
   display: flex;
-  align-items: center;
+  flex-direction: column;
 }
 
-.preview-section {
-  min-height: 100vh;
-  background: rgba(0, 0, 0, 0.4);
-  backdrop-filter: blur(10px);
-  padding: 4rem 0;
+.demo-card-mobile .q-card-section {
+  flex-grow: 1;
 }
 
-.steps-section {
-  min-height: 100vh;
-  background: rgba(255, 185, 141, 0.05);
-  backdrop-filter: blur(10px);
-  padding: 4rem 0;
-  display: flex;
-  align-items: center;
-}
-
-.faq-section {
-  min-height: 80vh;
-  background: rgba(0, 0, 0, 0.6);
-  backdrop-filter: blur(10px);
-  padding: 4rem 0;
-}
-
-/* Custom Card Styles */
-.welcome-card {
-  background: rgba(255, 185, 141, 0.15) !important;
-  border: 2px solid rgba(255, 185, 141, 0.3);
-  max-width: 600px;
-  margin: 0 auto;
-}
-
-.logged-in-section {
-  animation: fadeInUp 0.6s ease-out;
-}
-
-/* NASA Avatar Styles */
-.nasa-avatar-container {
-  position: relative;
-  display: inline-block;
-}
-
-.nasa-avatar {
-  border: 3px solid rgba(255, 185, 141, 0.5);
-  transition: all 0.3s ease;
+.mobile-nav-toggle {
   background: rgba(255, 255, 255, 0.1);
+  border-radius: 20px;
+  padding: 4px;
 }
 
-.nasa-avatar:hover {
-  border-color: rgba(255, 185, 141, 0.8);
-  transform: scale(1.05);
+.mobile-nav-toggle .q-btn {
+  min-width: 70px;
+  font-size: 0.8rem;
 }
 
-.loading-avatar {
-  background: rgba(255, 185, 141, 0.2) !important;
-}
-
-.apod-image {
-  width: 100%;
+/* Enhanced Desktop Cards */
+.full-height {
   height: 100%;
-  object-fit: cover;
-  border-radius: inherit;
-}
-
-.nasa-badge {
-  position: absolute;
-  bottom: -8px;
-  right: -8px;
-  font-size: 0.7rem;
-  font-weight: 600;
-}
-
-.nasa-info {
-  max-width: 400px;
-  margin: 0 auto;
-}
-
-.nasa-details {
-  background: rgba(255, 255, 255, 0.05);
-  border-radius: 8px;
-  margin-top: 1rem;
-}
-
-/* Navigation Buttons - Haupt Navigation */
-.main-navigation {
-  max-width: 600px;
-  margin: 0 auto;
-}
-
-.uniform-btn {
-  min-width: 140px;
-  min-height: 50px;
-  font-weight: 600;
-  transition: all 0.3s ease;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
-  text-transform: none;
-  white-space: normal;
-  padding: 12px 16px;
-}
-
-.uniform-btn:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
-}
-
-.uniform-btn .q-btn__content {
-  flex-direction: row;
-  gap: 8px;
-  justify-content: center;
-  align-items: center;
-}
-
-.uniform-btn .q-icon {
-  font-size: 20px;
-}
-
-/* Quick Access Navigation */
-.quick-access-section {
-  max-width: 300px;
-  margin: 0 auto;
-}
-
-.quick-access-card {
-  background: rgba(255, 255, 255, 0.05) !important;
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 12px;
-  backdrop-filter: blur(5px);
-}
-
-.quick-btn {
-  width: 100%;
-  aspect-ratio: 1;
-  transition: all 0.2s ease;
-}
-
-.quick-btn:hover {
-  transform: scale(1.1);
-  background: rgba(255, 255, 255, 0.1) !important;
-}
-
-@keyframes fadeInUp {
-  from {
-    opacity: 0;
-    transform: translateY(30px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-.journey-card {
-  background: rgba(255, 255, 255, 0.1) !important;
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  transition: all 0.3s ease;
-}
-
-.journey-card:hover {
-  background: rgba(255, 255, 255, 0.15) !important;
-  transform: translateY(-5px);
+  display: flex;
+  flex-direction: column;
 }
 
 .demo-card {
-  background: rgba(255, 255, 255, 0.08) !important;
+  background: rgba(0, 0, 0, 0.447) !important;
   border: 1px solid rgba(255, 255, 255, 0.1);
   transition: all 0.3s ease;
-  height: 100%;
+  border-radius: 12px;
 }
 
 .demo-card:hover {
   background: rgba(255, 255, 255, 0.12) !important;
   border-color: rgba(255, 185, 141, 0.5);
   transform: translateY(-3px);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+}
+
+.demo-card .q-card-section:last-child {
+  flex-grow: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
 }
 
 .faq-item {
@@ -1008,67 +805,93 @@ const scrollToPreview = () => {
   color: rgba(255, 255, 255, 0.8) !important;
 }
 
+/* Carousel Controls Styling */
+.q-carousel__control {
+  background: rgba(255, 185, 141, 0.8) !important;
+  color: rgba(0, 0, 0, 0.8) !important;
+}
+
+.q-carousel__control:hover {
+  background: rgba(255, 185, 141, 1) !important;
+}
+
+/* Carousel Arrows */
+.q-carousel .q-carousel__arrow {
+  background: rgba(255, 185, 141, 0.9);
+  color: rgba(0, 0, 0, 0.8);
+  border-radius: 50%;
+  width: 40px;
+  height: 40px;
+}
+
+.q-carousel .q-carousel__arrow:hover {
+  background: rgba(255, 185, 141, 1);
+  transform: scale(1.1);
+}
+
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
 /* Responsive adjustments */
-@media (max-width: 768px) {
+@media (max-width: 1023px) {
+  .preview-section {
+    padding: 3rem 1rem;
+    background: rgba(0, 0, 0, 0.45) !important;
+    backdrop-filter: blur(6px) !important;
+  }
+  
+  .mobile-preview-carousel {
+    max-width: 400px;
+    margin: 0 auto;
+  }
+  
   .hero-section,
-  .preview-section,
   .steps-section,
   .faq-section {
     padding: 2rem 1rem;
   }
-
-  .main-navigation {
-    max-width: 95%;
-  }
-
-  .uniform-btn {
-    min-width: 120px;
-    min-height: 45px;
-    font-size: 0.9rem;
-    padding: 10px 12px;
-  }
-
-  .uniform-btn .q-icon {
-    font-size: 18px;
-  }
-
-  .quick-access-section {
-    max-width: 250px;
-  }
 }
 
-@media (max-width: 480px) {
+@media (max-width: 768px) {
   .welcome-card {
     max-width: 95%;
     margin: 0 auto;
   }
+}
 
-  .main-navigation {
-    padding: 0 0.5rem;
+@media (max-width: 599px) {
+  .preview-section {
+    padding: 2rem 0.5rem;
+    background: rgba(0, 0, 0, 0.5) !important;
+    backdrop-filter: blur(5px) !important;
   }
-
-  .uniform-btn {
-    min-width: 100px;
-    min-height: 42px;
-    font-size: 0.85rem;
-    padding: 8px 10px;
+  
+  .faq-section {
+    background: rgba(0, 0, 0, 0.6) !important;
+    backdrop-filter: blur(8px) !important;
   }
-
-  .uniform-btn .q-icon {
-    font-size: 16px;
+  
+  .mobile-preview-carousel {
+    max-width: 350px;
   }
-
-  .quick-access-section {
-    max-width: 220px;
+  
+  .demo-card-mobile {
+    min-height: 280px;
   }
-
-  .quick-btn {
-    font-size: 0.8rem;
+  
+  .mobile-nav-toggle .q-btn {
+    min-width: 60px;
+    font-size: 0.75rem;
   }
 }
 
 
-.preview-section { 
-  margin: 5rem;
-}
 </style>
