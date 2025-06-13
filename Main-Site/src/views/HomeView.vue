@@ -3,8 +3,8 @@
     <!-- Three.js Hintergrund -->
     <div class="three-background">
       <Blackhole-MainSite
-      :primaryColor=" [0.5, 0.6, 0.8]"
-        :secondaryColor="[1.0, 0.73, 0.55]"
+      :primaryColor="[0.2, 0.3, 0.5]"
+        :secondaryColor="[1.0, 0.6, 0.1]"
         :low-performance-mode="true"
       />
     </div>
@@ -1067,11 +1067,8 @@ const scrollToPreview = () => {
   }
 }
 
-.hero-section, 
-.preview-section, 
-.steps-section, 
-.faq-section {
-  padding: 6rem 0; 
-  margin-bottom: 2rem;
+
+.preview-section { 
+  margin: 5rem;
 }
 </style>
